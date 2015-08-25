@@ -11,4 +11,4 @@
             "mesour/sources": "dev-master"
         }
 
-- Or download source from [GitHub](https://github.com/mesour/Sources/releases)
+- Or download source from [GitHub](https://github.com/mesour/sources/releases)
