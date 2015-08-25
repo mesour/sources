@@ -1,0 +1,32 @@
+{
+  "name": "mesour/sources",
+  "description": "Mesour Source component.",
+  "license": ["BSD-3-Clause","GPL-3.0"],
+  "keywords": ["sources","component"],
+  "homepage": "http://mesour.com",
+  "authors": [{
+      "name": "Matouš Němec",
+      "homepage": "http://mesour.com"
+  }],
+  "repositories": [{
+      "type": "composer",
+      "url": "http://packagist.mesour.com"
+  }],
+  "require": {
+      "php": ">=5.4.0"
+  },
+  "require-dev": {
+      "nette/database": "~2.3",
+      "nette/tester": "~1.4",
+      "tracy/tracy": "~2.3.0",
+      "mesour/array-manager": "dev-master"
+  },
+  "suggest": {
+      "mesour/array-manager": "to use DataSource for Array",
+      "nette/database": "to use DataSource for Nette Database"
+  },
+  "minimum-stability": "dev",
+  "autoload": {
+      "classmap": ["src/"]
+  }
+}
