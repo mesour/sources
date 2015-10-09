@@ -23,6 +23,7 @@
   },
   "suggest": {
       "mesour/array-manager": "to use DataSource for Array",
+      "mesour/database": "to use DataSource for Mesour Database",
       "nette/database": "to use DataSource for Nette Database"
   },
   "minimum-stability": "dev",
