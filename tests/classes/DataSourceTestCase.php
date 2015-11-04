@@ -4,6 +4,7 @@ namespace Test;
 require_once __DIR__ . '/../bootstrap.php';
 
 use Mesour\Sources\ISource;
+use Mesour\Sources\NetteDbSource;
 use Tester\Assert;
 
 abstract class DataSourceTestCase extends \Tester\TestCase
@@ -27,7 +28,7 @@ abstract class DataSourceTestCase extends \Tester\TestCase
     protected $credentials = array(
         'dsn' => "mysql:host=127.0.0.1;dbname=sources_test",
         'user' => 'root',
-        'password' => '',
+        'password' => 'root',
         'database' => '',
     );
 
@@ -102,7 +103,11 @@ abstract class DataSourceTestCase extends \Tester\TestCase
 
     private function assertCounts(ISource $source, $active_count, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT)
     {
-        Assert::count($columns, $source->fetch());
+        $itemData = $source->fetch();
+        if($itemData && $source instanceof NetteDbSource) {
+            $itemData = $itemData->toArray();
+        }
+        Assert::count($columns, $itemData);
         Assert::count($active_count, $source->fetchAll());
         Assert::same($full, $source->getTotalCount());
         Assert::same($active_count, $source->count());

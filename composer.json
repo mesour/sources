@@ -3,14 +3,10 @@
   "description": "Mesour Source component.",
   "license": ["BSD-3-Clause","GPL-3.0"],
   "keywords": ["sources","component"],
-  "homepage": "http://mesour.com",
+  "homepage": "http://components.mesour.com/component/sources",
   "authors": [{
       "name": "Matouš Němec",
       "homepage": "http://mesour.com"
-  }],
-  "repositories": [{
-      "type": "composer",
-      "url": "http://packagist.mesour.com"
   }],
   "require": {
       "php": ">=5.4.0"
@@ -23,7 +19,6 @@
   },
   "suggest": {
       "mesour/array-manager": "to use DataSource for Array",
-      "mesour/database": "to use DataSource for Mesour Database",
       "nette/database": "to use DataSource for Nette Database"
   },
   "minimum-stability": "dev",

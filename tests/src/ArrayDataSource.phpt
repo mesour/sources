@@ -54,12 +54,13 @@ class ArraySourceTest extends \Test\DataSourceTestCase
     public function testFetch()
     {
         $source = new ArraySource($this->user);
-        Assert::same($source->fetch(), reset($this->user));
+        Assert::equal($source->fetch(), \Mesour\Sources\ArrayHash::from(reset($this->user)));
     }
 
     public function testFetchPairs()
     {
         $source = new ArraySource($this->user);
+
         $this->matchPairs($source);
     }
 

@@ -13,7 +13,6 @@ use Mesour\ArrayManage\Searcher\Condition;
 use Mesour\ArrayManage\Searcher\Select;
 
 
-
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
  */
@@ -22,25 +21,25 @@ class ArraySource implements ISource
 
     private $primary_key = 'id';
 
-    private $relations = array();
+    private $relations = [];
 
-    private $related = array();
+    private $related = [];
 
     /**
      * @var Select
      */
     protected $select;
 
-    protected $data_arr = array();
+    protected $data_arr = [];
 
-    protected $structure = array();
+    protected $structure = [];
 
     /**
      * @param array $data
      * @param array $relations
      * @throws MissingRequiredException
      */
-    public function __construct(array $data, array $relations = array())
+    public function __construct(array $data, array $relations = [])
     {
         if (!class_exists('\Mesour\ArrayManage\Searcher\Select')) {
             throw new MissingRequiredException('Array data source required composer package "mesour/array-manager".');
@@ -63,7 +62,7 @@ class ArraySource implements ISource
     /**
      * Get array data count
      *
-     * @return Integer
+     * @return int
      */
     public function getTotalCount()
     {
@@ -89,8 +88,8 @@ class ArraySource implements ISource
     /**
      * Apply limit and offset
      *
-     * @param Integer $limit
-     * @param Integer $offset
+     * @param int $limit
+     * @param int $offset
      */
     public function applyLimit($limit, $offset = 0)
     {
@@ -101,7 +100,7 @@ class ArraySource implements ISource
     /**
      * Get count after applied where
      *
-     * @return Integer
+     * @return int
      */
     public function count()
     {
@@ -111,7 +110,7 @@ class ArraySource implements ISource
     /**
      * Get searched values witp applied limit, offset and where
      *
-     * @return Array
+     * @return array
      */
     public function fetchAll()
     {
@@ -121,7 +120,15 @@ class ArraySource implements ISource
                 $this->removeStructureDate($out[$key]);
             }
         }
+        foreach ($out as $key => $val) {
+            $out[$key] = $this->makeArrayHash($val);
+        }
         return $out;
+    }
+
+    private function makeArrayHash(array $val)
+    {
+        return ArrayHash::from($val);
     }
 
     public function orderBy($row, $sorting = 'ASC')
@@ -132,18 +139,18 @@ class ArraySource implements ISource
     /**
      * Return first element from data
      *
-     * @return Array
+     * @return array
      */
     public function fetch()
     {
         $data = $this->getSelect()->fetch();
-        if(!$data) {
-            return array();
+        if (!$data) {
+            return [];
         }
         if (count($this->structure) > 0) {
             $this->removeStructureDate($data);
         }
-        return $data;
+        return $this->makeArrayHash($data);
     }
 
     /**
@@ -156,8 +163,8 @@ class ArraySource implements ISource
         $data = $this->getSelect()->column($key)->column($value)
             ->fetchAll();
 
-        $output = array();
-        foreach($data as $item) {
+        $output = [];
+        foreach ($data as $item) {
             $output[$item[$key]] = $item[$value];
         }
         return $output;
@@ -182,7 +189,7 @@ class ArraySource implements ISource
 
     public function setRelated($table, $key, $column, $as = NULL, $primary = 'id')
     {
-        $this->related[$table] = array($table, $key, $column, $as, $primary);
+        $this->related[$table] = [$table, $key, $column, $as, $primary];
         $related = $this->related($table, $key);
 
         foreach ($this->data_arr as $_key => $item) {

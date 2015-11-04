@@ -50,3 +50,11 @@ INSERT INTO `user` (`user_id`, `action`, `group_id`, `name`, `surname`, `email`,
 (18,	0,	1,	'Douglas',	'Stanley',	'douglas.stanley@test.xx',	'2014-04-16 15:22:18',	900,	'/avatar/18.png',	90,	1418255332),
 (19,	1,	2,	'Patti',	'Diaz',	'patti.diaz@test.xx',	'2014-09-11 12:17:16',	1500,	'/avatar/19.png',	80,	1418255275),
 (20,	0,	1,	'John',	'Petterson',	'john.petterson@test.xx',	'2014-10-10 10:10:10',	2500,	'/avatar/20.png',	190,	1418255275);
+
+DROP TABLE IF EXISTS `empty`;
+CREATE TABLE `empty` (
+  `empty_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL,
+  `surname` varchar(64) NOT NULL,
+  PRIMARY KEY (`empty_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

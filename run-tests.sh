@@ -1,1 +1,1 @@
-vendor\bin\tester tests -s -c ..\..\..\php\php.ini
+./vendor/bin/tester tests -s -c ./tests/php.ini

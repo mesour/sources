@@ -10,6 +10,7 @@
 namespace Mesour\Sources;
 
 use Nette\Database\Context;
+use Nette\Database\Table\ActiveRow;
 use Nette\Database\Table\Selection;
 
 
@@ -130,16 +131,12 @@ class NetteDbSource implements ISource
 
     /**
      * Get searched values with applied limit, offset and where
-     * @return array
+     * @return ActiveRow[]
      */
     public function fetchAll()
     {
-        $output = array();
         $selection = $this->getSelection();
-        foreach ($selection as $data) {
-            $output[] = $data->toArray();
-        }
-        return $output;
+        return $selection->fetchAll();
     }
 
     public function orderBy($row, $sorting = 'ASC')
@@ -154,7 +151,7 @@ class NetteDbSource implements ISource
     public function fetch()
     {
         if ($this->total_count > 0) {
-            return $this->getSelection(FALSE, FALSE)->limit(1, 0)->fetch()->toArray();
+            return $this->getSelection(FALSE, FALSE)->fetch();
         } else {
             return array();
         }
