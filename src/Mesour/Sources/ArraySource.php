@@ -126,7 +126,7 @@ class ArraySource implements ISource
         return $out;
     }
 
-    private function makeArrayHash(array $val)
+    protected function makeArrayHash(array $val)
     {
         return ArrayHash::from($val);
     }
