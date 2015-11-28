@@ -21,7 +21,7 @@ use Nette\Database\Table\Selection;
 class NetteDbSource implements ISource
 {
 
-    private $primary_key = 'id';
+    private $primaryKey = 'id';
 
     private $related = array();
 
@@ -146,14 +146,14 @@ class NetteDbSource implements ISource
 
     /**
      * Return first element from data
-     * @return array
+     * @return ActiveRow|FALSE
      */
     public function fetch()
     {
         if ($this->total_count > 0) {
             return $this->getSelection(FALSE, FALSE)->fetch();
         } else {
-            return array();
+            return FALSE;
         }
     }
 
@@ -171,12 +171,12 @@ class NetteDbSource implements ISource
 
     public function getPrimaryKey()
     {
-        return $this->primary_key;
+        return $this->primaryKey;
     }
 
-    public function setPrimaryKey($primary_key)
+    public function setPrimaryKey($primaryKey)
     {
-        $this->primary_key = $primary_key;
+        $this->primaryKey = $primaryKey;
         return $this;
     }
 

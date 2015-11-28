@@ -108,9 +108,9 @@ class ArraySource implements ISource
     }
 
     /**
-     * Get searched values witp applied limit, offset and where
+     * Get searched values with applied limit, offset and where
      *
-     * @return array
+     * @return ArrayHash[]
      */
     public function fetchAll()
     {
@@ -139,13 +139,13 @@ class ArraySource implements ISource
     /**
      * Return first element from data
      *
-     * @return array
+     * @return ArrayHash|FALSE
      */
     public function fetch()
     {
         $data = $this->getSelect()->fetch();
         if (!$data) {
-            return [];
+            return FALSE;
         }
         if (count($this->structure) > 0) {
             $this->removeStructureDate($data);

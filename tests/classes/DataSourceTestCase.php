@@ -98,16 +98,20 @@ abstract class DataSourceTestCase extends \Tester\TestCase
 
     protected function matchEmpty(ISource $source)
     {
-        $this->assertCounts($source, 0, 0, 0);
+        $this->assertCounts($source, 0, 0, 0, TRUE);
     }
 
-    private function assertCounts(ISource $source, $active_count, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT)
+    private function assertCounts(ISource $source, $active_count, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT, $fetch = FALSE)
     {
         $itemData = $source->fetch();
         if($itemData && $source instanceof NetteDbSource) {
             $itemData = $itemData->toArray();
         }
-        Assert::count($columns, $itemData);
+        if(!$fetch) {
+            Assert::count($columns, $itemData);
+        } else {
+            Assert::same(FALSE, $itemData);
+        }
         Assert::count($active_count, $source->fetchAll());
         Assert::same($full, $source->getTotalCount());
         Assert::same($active_count, $source->count());

@@ -4,10 +4,10 @@ define('SRC_DIR', __DIR__ . '/../src/');
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-require_once SRC_DIR . 'Sources/ArrayHash.php';
-require_once SRC_DIR . 'Sources/ISource.php';
-require_once SRC_DIR . 'Sources/ArraySource.php';
-require_once SRC_DIR . 'Sources/NetteDbSource.php';
+require_once SRC_DIR . 'Mesour/Sources/ArrayHash.php';
+require_once SRC_DIR . 'Mesour/Sources/ISource.php';
+require_once SRC_DIR . 'Mesour/Sources/ArraySource.php';
+require_once SRC_DIR . 'Mesour/Sources/NetteDbSource.php';
 
 if (!class_exists('Tester\Assert')) {
     echo "Install Nette Tester using `composer update --dev`\n";
