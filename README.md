@@ -7,8 +7,6 @@
 
 - With [Composer](https://getcomposer.org)
 
-        "require": {
-            "mesour/sources": "dev-master"
-        }
+        composer require mesour/sources
 
 - Or download source from [GitHub](https://github.com/mesour/sources/releases)
