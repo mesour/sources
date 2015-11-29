@@ -66,8 +66,8 @@ require_once '../tests/Entity/Groups.php';
     $qb
         ->select('u')
         ->from('user', 'u')
-        //->where('u.email= :email')
-        //->setParameter('email', 'john.doe@test.xx')
+        ->where('u.name= :name')
+        ->setParameter('name', 'john')
         ;
 
     $source = new \Mesour\Sources\DoctrineSource($qb, [
@@ -77,12 +77,16 @@ require_once '../tests/Entity/Groups.php';
         'group_name' => 'gr.name',
     ]);
 
-    //dump($source->setRelated('groups', 'group_id', 'name', 'group_name', 'id'));
-    //dump($source->fetch());
-    //dump($source->fetchPairs('user_id', 'group_name'));
-    //dump($source->fetchAll());
-    //$groupsSource = $source->related('groups');
-    //dump($groupsSource->fetchAll());
+    dump($source->setRelated('groups', 'group_id', 'name', 'group_name', 'id'));
+    dump($source->where('u.email= :email', ['email' => 'john.doe@test.xx']));
+    dump($source->fetch());
+    dump($source->fetchPairs('user_id', 'group_name'));
+    dump($source->fetchAll());
+    dump($source->fetchFullData());
+    dump($source->count());
+    dump($source->getTotalCount());
+    $groupsSource = $source->related('groups');
+    dump($groupsSource->fetchAll());
 
 
 

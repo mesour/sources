@@ -1,4 +1,11 @@
 <?php
+/**
+ * This file is part of the Mesour Sources (http://components.mesour.com/component/sources)
+ *
+ * Copyright (c) 2015 Martin Procházka <juniwalk@outlook.cz>, Matouš Němec (http://mesour.com)
+ *
+ * For full licence and copyright please view the file licence.md in root of this project
+ */
 
 namespace Mesour\Sources;
 
@@ -9,7 +16,7 @@ use Doctrine\ORM\Tools\Pagination\Paginator;
 
 /**
  * @author  Martin Procházka <juniwalk@outlook.cz>
- * @package Mesour DataGrid
+ * @author  Matouš Němec <matous.nemec@mesour.com>
  */
 class DoctrineSource implements ISource
 {
@@ -33,12 +40,6 @@ class DoctrineSource implements ISource
     protected $itemsTotalCount = 0;
 
     /**
-     * Count of filtered items.
-     * @var int
-     */
-    protected $itemsCount = 0;
-
-    /**
      * Name of primary column name.
      * @var string
      */
@@ -47,6 +48,8 @@ class DoctrineSource implements ISource
     private $related = [];
 
     private $relations = [];
+
+    private $whereArr = [];
 
     /**
      * Initialize Doctrine data source with QueryBuilder instance.
@@ -71,11 +74,23 @@ class DoctrineSource implements ISource
 
     /**
      * Get copy of the QueryBuilder.
+     * @param bool|FALSE $resetWhere
      * @return QueryBuilder
      */
-    public function cloneQueryBuilder()
+    public function cloneQueryBuilder($resetWhere = FALSE)
     {
-        return clone $this->queryBuilder;
+        $queryBuilder = clone $this->getQueryBuilder();
+        if (!$resetWhere) {
+            foreach ($this->whereArr as $item) {
+                call_user_func_array([$queryBuilder, (isset($item[2]) && $item[2] ? 'orWhere' : 'andWhere')], [$item[0]]);
+                if (count($item[1]) > 0) {
+                    foreach ($item[1] as $key => $val) {
+                        $queryBuilder->setParameter($key, $val);
+                    }
+                }
+            }
+        }
+        return $queryBuilder;
     }
 
     /**
@@ -84,7 +99,7 @@ class DoctrineSource implements ISource
      */
     public function getQuery()
     {
-        return $this->queryBuilder->getQuery();
+        return $this->cloneQueryBuilder()->getQuery();
     }
 
     /**
@@ -107,9 +122,7 @@ class DoctrineSource implements ISource
         }
 
         // Remove WHERE confition from QueryBuilder
-        $query = $this->cloneQueryBuilder()
-            ->resetDQLPart('where')
-            ->setParameters([])// May cause problems?
+        $query = $this->cloneQueryBuilder(TRUE)
             ->getQuery();
 
         // Get total count without WHERE and LIMIT applied
@@ -124,12 +137,10 @@ class DoctrineSource implements ISource
     public function fetchFullData()
     {
         //todo: move to filter source
-        return $this->cloneQueryBuilder()
-            ->resetDQLPart('where')
-            ->setParameters([])// May cause problems?
+        return $this->fixResult($this->cloneQueryBuilder(TRUE)
             ->setMaxResults(null)
             ->setFirstResult(null)
-            ->getQuery()->getArrayResult();
+            ->getQuery()->getArrayResult());
     }
 
 
@@ -150,12 +161,12 @@ class DoctrineSource implements ISource
      * Add where condition.
      * @param mixed $args
      * @param array $parameters key => $value
+     * @param bool|FALSE $or
      * @return $this
      */
-    public function where($args, array $parameters = [])
+    public function where($args, array $parameters = [], $or = FALSE)
     {
-        call_user_func_array([$this->getQueryBuilder(), 'where'], $args);
-        $this->getQueryBuilder()->setParameters($parameters);
+        $this->whereArr[] = func_get_args();
         return $this;
     }
 
@@ -179,10 +190,7 @@ class DoctrineSource implements ISource
      */
     public function count()
     {
-        if (!$this->itemsCount) {
-            $this->itemsCount = (new Paginator($this->getQuery()))->count();
-        }
-        return $this->itemsCount;
+        return (new Paginator($this->getQuery()))->count();
     }
 
     /**
