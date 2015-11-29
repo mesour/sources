@@ -23,14 +23,14 @@ class NetteDbSource implements ISource
 
     private $primaryKey = 'id';
 
-    private $related = array();
+    private $related = [];
 
-    private $relations = array();
+    private $relations = [];
 
     /**
      * @var Selection
      */
-    private $nette_table;
+    private $netteTable;
 
     /**
      * @var Context
@@ -40,7 +40,7 @@ class NetteDbSource implements ISource
     /**
      * @var array
      */
-    private $where_arr = array();
+    private $where_arr = [];
 
     /**
      * @var integer
@@ -52,7 +52,7 @@ class NetteDbSource implements ISource
      */
     private $offset = 0;
 
-    private $total_count = 0;
+    private $totalCount = 0;
 
     /**
      * @param Selection $selection
@@ -61,8 +61,8 @@ class NetteDbSource implements ISource
     public function __construct(Selection $selection, Context $context = NULL)
     {
         $this->context = $context;
-        $this->nette_table = $selection;
-        $this->total_count = $selection->count('*');
+        $this->netteTable = $selection;
+        $this->totalCount = $selection->count('*');
     }
 
     /**
@@ -78,7 +78,7 @@ class NetteDbSource implements ISource
      */
     public function getTotalCount()
     {
-        return $this->total_count;
+        return $this->totalCount;
     }
 
     /**
@@ -117,10 +117,10 @@ class NetteDbSource implements ISource
 
     protected function getSelection($limit = TRUE, $where = TRUE)
     {
-        $selection = clone $this->nette_table;
+        $selection = clone $this->netteTable;
         if ($where) {
             foreach ($this->where_arr as $conditions) {
-                call_user_func_array(array($selection, 'where'), $conditions);
+                call_user_func_array([$selection, 'where'], $conditions);
             }
         }
         if ($limit) {
@@ -141,7 +141,7 @@ class NetteDbSource implements ISource
 
     public function orderBy($row, $sorting = 'ASC')
     {
-        return $this->nette_table->order($row . ' ' . $sorting);
+        return $this->netteTable->order($row . ' ' . $sorting);
     }
 
     /**
@@ -150,7 +150,7 @@ class NetteDbSource implements ISource
      */
     public function fetch()
     {
-        if ($this->total_count > 0) {
+        if ($this->totalCount > 0) {
             return $this->getSelection(FALSE, FALSE)->fetch();
         } else {
             return FALSE;
@@ -180,17 +180,17 @@ class NetteDbSource implements ISource
         return $this;
     }
 
-    public function setRelated($table, $key, $column, $as = NULL, $primary = 'id')
+    public function setRelated($table, $key, $column, $as = NULL, $primary = 'id', $left = FALSE)
     {
         if (is_null($this->context)) {
             throw new Exception('Related require set Nette database context in constructor.');
         }
         if (count($this->related) === 0) {
-            $this->nette_table->select('*');
+            $this->netteTable->select('*');
         }
-        $this->related[$table] = array($table, $key, $column, $as, $primary);
+        $this->related[$table] = func_get_args();
 
-        $this->nette_table->select($table . '.' . $column . (!is_null($as) ? (' AS ' . $as) : ''));
+        $this->netteTable->select($table . '.' . $column . (!is_null($as) ? (' AS ' . $as) : ''));
 
         return $this;
     }

@@ -11,38 +11,11 @@
 
 <?php
 
-define('SRC_DIR', __DIR__ . '/../src/');
+/** @var \Doctrine\ORM\EntityManager $entityManager */
+$entityManager = require_once __DIR__ . '/bootstrap.php';
 
-require_once __DIR__ . '/../vendor/autoload.php';
-
-\Tracy\Debugger::enable(\Tracy\Debugger::DEVELOPMENT, __DIR__ . '/log');
-
-require_once SRC_DIR . 'Table/BaseTable.php';
-require_once SRC_DIR . 'Table.php';
-
-require_once SRC_DIR . 'Table/ITable.php';
-require_once SRC_DIR . 'Table/Source/ISource.php';
-require_once SRC_DIR . 'Table/Source/ArraySource.php';
-require_once SRC_DIR . 'Table/Render/Attributes.php';
-require_once SRC_DIR . 'Table/Render/Body.php';
-require_once SRC_DIR . 'Table/Render/Cell.php';
-require_once SRC_DIR . 'Table/Render/Header.php';
-require_once SRC_DIR . 'Table/Render/HeaderCell.php';
-require_once SRC_DIR . 'Table/Render/IColumn.php';
-require_once SRC_DIR . 'Table/BaseColumn.php';
-require_once SRC_DIR . 'Table/Column.php';
-require_once SRC_DIR . 'Table/Render/IRendererFactory.php';
-require_once SRC_DIR . 'Table/Render/Renderer.php';
-require_once SRC_DIR . 'Table/Render/Row.php';
-require_once SRC_DIR . 'Table/Render/Table/Row.php';
-require_once SRC_DIR . 'Table/Render/Table/Renderer.php';
-require_once SRC_DIR . 'Table/Render/Table/Body.php';
-require_once SRC_DIR . 'Table/Render/Table/Cell.php';
-require_once SRC_DIR . 'Table/Render/Table/Header.php';
-require_once SRC_DIR . 'Table/Render/Table/HeaderCell.php';
-require_once SRC_DIR . 'Table/Render/Table/RendererFactory.php';
-
-\Mesour\UI\Control::$default_link = new \Mesour\Components\Link\Link();
+require_once '../tests/Entity/User.php';
+require_once '../tests/Entity/Groups.php';
 
 ?>
 
@@ -78,7 +51,44 @@ require_once SRC_DIR . 'Table/Render/Table/RendererFactory.php';
         )
     );
 
+    $helperSet = new \Symfony\Component\Console\Helper\HelperSet(array(
+        'db' => new \Doctrine\DBAL\Tools\Console\Helper\ConnectionHelper($entityManager->getConnection()),
+        'em' => new \Doctrine\ORM\Tools\Console\Helper\EntityManagerHelper($entityManager)
+    ));
+
+    /*$product = new \User();
+    $product->setName('test');
+
+    $entityManager->persist($product);
+    $entityManager->flush();*/
+
+    $qb = $entityManager->createQueryBuilder();
+    $qb
+        ->select('u')
+        ->from('user', 'u')
+        //->where('u.email= :email')
+        //->setParameter('email', 'john.doe@test.xx')
+        ;
+
+    $source = new \Mesour\Sources\DoctrineSource($qb, [
+        'user_id' => 'u.userId',
+        'group_id' => 'u.groups',
+        'last_login' => 'u.lastLogin',
+        'group_name' => 'gr.name',
+    ]);
+
+    //dump($source->setRelated('groups', 'group_id', 'name', 'group_name', 'id'));
+    //dump($source->fetch());
+    //dump($source->fetchPairs('user_id', 'group_name'));
+    //dump($source->fetchAll());
+    //$groupsSource = $source->related('groups');
+    //dump($groupsSource->fetchAll());
+
+
+
     $table->setSource($data);
+
+    $source = $table->getSource();
 
     $table->setAttribute('class', 'table table-striped table-hover');
 

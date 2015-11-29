@@ -187,7 +187,7 @@ class ArraySource implements ISource
         return $this;
     }
 
-    public function setRelated($table, $key, $column, $as = NULL, $primary = 'id')
+    public function setRelated($table, $key, $column, $as = NULL, $primary = 'id', $left = FALSE)
     {
         $this->related[$table] = [$table, $key, $column, $as, $primary];
         $related = $this->related($table, $key);
