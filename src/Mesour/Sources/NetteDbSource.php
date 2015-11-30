@@ -229,4 +229,14 @@ class NetteDbSource implements ISource
         return $this->related;
     }
 
+    protected function getRealColumnName($column_name)
+    {
+        foreach ($this->related as $name => $options) {
+            if ($column_name === $options[3]) {
+                return $options[0] . '.' . $options[2];
+            }
+        }
+        return $column_name;
+    }
+
 }

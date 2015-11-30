@@ -218,6 +218,9 @@ class ArraySource implements ISource
             throw new Exception('Relation ' . $table . ' does not exists.');
         }
         if (!isset($this->relations[$table]) || !$this->relations[$table] instanceof ISource) {
+            if(!is_array($this->relations[$table])) {
+                throw new Exception('Relation ' . $table . ' does not exists.');
+            }
             $this->relations[$table] = new static($this->relations[$table]);
             $this->relations[$table]->setPrimaryKey($this->related[$table][4]);
         }
