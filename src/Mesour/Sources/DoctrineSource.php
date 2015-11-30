@@ -58,7 +58,6 @@ class DoctrineSource implements ISource
      */
     public function __construct(QueryBuilder $queryBuilder, array $columnMapping = [])
     {
-        // Save copy of provided QueryBuilder
         $this->queryBuilder = clone $queryBuilder;
         $this->columnMapping = $columnMapping;
     }
@@ -121,26 +120,13 @@ class DoctrineSource implements ISource
             return $this->itemsTotalCount;
         }
 
-        // Remove WHERE confition from QueryBuilder
+        // Remove WHERE condition from QueryBuilder
         $query = $this->cloneQueryBuilder(TRUE)
             ->getQuery();
 
         // Get total count without WHERE and LIMIT applied
         $this->itemsTotalCount = (new Paginator($query))->count();
         return $this->itemsTotalCount;
-    }
-
-    /**
-     * Get every single row of the table.
-     * @return array
-     */
-    public function fetchFullData()
-    {
-        //todo: move to filter source
-        return $this->fixResult($this->cloneQueryBuilder(TRUE)
-            ->setMaxResults(null)
-            ->setFirstResult(null)
-            ->getQuery()->getArrayResult());
     }
 
 

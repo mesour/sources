@@ -1,6 +1,8 @@
 <?php
 
-require_once 'autoload.php';
+if(!defined('DISABLE_AUTOLOAD')) {
+    require_once 'autoload.php';
+}
 
 // bootstrap.php
 use Doctrine\ORM\Tools\Setup;
