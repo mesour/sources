@@ -240,7 +240,6 @@ class DoctrineSource implements ISource
             $em = $this->getQueryBuilder()->getEntityManager();
 
             $out = [];
-            // loop over the posts
             foreach ($this->lastFetchAllResult as $result) {
                 $addedColumns = [];
                 if(is_array($result)) {
