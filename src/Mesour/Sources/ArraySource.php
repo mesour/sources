@@ -25,12 +25,13 @@ class ArraySource implements ISource
 
     private $related = [];
 
-    /**
-     * @var Select
-     */
+    /** @var Select */
     protected $select;
 
     protected $data_arr = [];
+
+    /** @var null|array */
+    protected $lastFetchAllResult = NULL;
 
     protected $structure = [];
 
@@ -123,7 +124,24 @@ class ArraySource implements ISource
         foreach ($out as $key => $val) {
             $out[$key] = $this->makeArrayHash($val);
         }
+        $this->lastFetchAllResult = $out;
         return $out;
+    }
+
+    /**
+     * Get raw data from last fetchAll()
+     *
+     * IMPORTANT! fetchAll() must be called before call this method
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function fetchLastRawRows()
+    {
+        if(is_null($this->lastFetchAllResult)) {
+            throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
+        }
+        return $this->lastFetchAllResult;
     }
 
     protected function makeArrayHash(array $val)

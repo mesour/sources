@@ -14,7 +14,6 @@ use Nette\Database\Table\ActiveRow;
 use Nette\Database\Table\Selection;
 
 
-
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
  */
@@ -53,6 +52,9 @@ class NetteDbSource implements ISource
     private $offset = 0;
 
     private $totalCount = 0;
+
+    /** @var null|array */
+    protected $lastFetchAllResult = NULL;
 
     /**
      * @param Selection $selection
@@ -136,7 +138,24 @@ class NetteDbSource implements ISource
     public function fetchAll()
     {
         $selection = $this->getSelection();
-        return $selection->fetchAll();
+        $this->lastFetchAllResult = $selection->fetchAll();
+        return $this->lastFetchAllResult;
+    }
+
+    /**
+     * Get raw data from last fetchAll()
+     *
+     * IMPORTANT! fetchAll() must be called before call this method
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function fetchLastRawRows()
+    {
+        if(is_null($this->lastFetchAllResult)) {
+            throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
+        }
+        return $this->lastFetchAllResult;
     }
 
     public function orderBy($row, $sorting = 'ASC')
@@ -188,7 +207,7 @@ class NetteDbSource implements ISource
         if (count($this->related) === 0) {
             $this->netteTable->select('*');
         }
-        $this->related[$table] = func_get_args();
+        $this->related[$table] = [$table, $key, $column, $as, $primary, $left];
 
         $this->netteTable->select($table . '.' . $column . (!is_null($as) ? (' AS ' . $as) : ''));
 

@@ -96,13 +96,13 @@ class NetteDbSourceTest extends \Test\DataSourceTestCase
     {
         $source = new NetteDbSource($this->user, $this->context);
 
-        Assert::same(FALSE, $source->isRelated('group'));
+        Assert::same(FALSE, $source->isRelated('groups'));
 
-        $source->setRelated('group', 'group_id', 'name', 'group_name');
+        $source->setRelated('groups', 'group_id', 'name', 'group_name');
 
-        Assert::same(TRUE, $source->isRelated('group'));
+        Assert::same(TRUE, $source->isRelated('groups'));
 
-        $related = $source->related('group');
+        $related = $source->related('groups');
 
         Assert::type('Mesour\Sources\NetteDbSource', $related);
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());

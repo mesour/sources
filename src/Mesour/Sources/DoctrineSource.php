@@ -45,11 +45,18 @@ class DoctrineSource implements ISource
      */
     protected $primaryKey = 'id';
 
+    protected $limit = NULL;
+
+    protected $offset = 0;
+
     private $related = [];
 
     private $relations = [];
 
     private $whereArr = [];
+
+    /** @var null|array */
+    protected $lastFetchAllResult = NULL;
 
     /**
      * Initialize Doctrine data source with QueryBuilder instance.
@@ -74,9 +81,10 @@ class DoctrineSource implements ISource
     /**
      * Get copy of the QueryBuilder.
      * @param bool|FALSE $resetWhere
+     * @param bool|FALSE $resetLimit
      * @return QueryBuilder
      */
-    public function cloneQueryBuilder($resetWhere = FALSE)
+    public function cloneQueryBuilder($resetWhere = FALSE, $resetLimit = FALSE)
     {
         $queryBuilder = clone $this->getQueryBuilder();
         if (!$resetWhere) {
@@ -87,6 +95,13 @@ class DoctrineSource implements ISource
                         $queryBuilder->setParameter($key, $val);
                     }
                 }
+            }
+        }
+        if (!$resetLimit && is_numeric($this->limit)) {
+            $queryBuilder->setMaxResults($this->limit);
+
+            if($this->offset > 0) {
+                $queryBuilder->setFirstResult($this->offset);
             }
         }
         return $queryBuilder;
@@ -121,7 +136,7 @@ class DoctrineSource implements ISource
         }
 
         // Remove WHERE condition from QueryBuilder
-        $query = $this->cloneQueryBuilder(TRUE)
+        $query = $this->cloneQueryBuilder(TRUE, TRUE)
             ->getQuery();
 
         // Get total count without WHERE and LIMIT applied
@@ -138,7 +153,8 @@ class DoctrineSource implements ISource
      */
     public function applyLimit($limit, $offset = 0)
     {
-        $this->getQueryBuilder()->setMaxResults($limit)->setFirstResult($offset);
+        $this->limit = $limit;
+        $this->offset = $offset;
         return $this;
     }
 
@@ -176,6 +192,26 @@ class DoctrineSource implements ISource
      */
     public function count()
     {
+        $totalCount = $this->getTotalCount();
+        if(!is_null($this->limit)) {
+            if($this->offset >= 0) {
+                $offset = ($this->offset + 1);
+                if($totalCount - $offset <= 0) {
+                    return 0;
+                }
+                if($totalCount - $offset >= $this->limit) {
+                    return $this->limit;
+                } elseif($totalCount - $offset < $this->limit) {
+                    return $totalCount - $offset;
+                }
+            } else {
+                if($totalCount >= $this->limit) {
+                    return $this->limit;
+                } elseif($totalCount < $this->limit) {
+                    return $totalCount;
+                }
+            }
+        }
         return (new Paginator($this->getQuery()))->count();
     }
 
@@ -200,11 +236,61 @@ class DoctrineSource implements ISource
     public function fetchAll()
     {
         try {
-            return $this->fixResult($this->getQuery()->getArrayResult());
+            $this->lastFetchAllResult = $this->getQuery()->getResult();
+            $em = $this->getQueryBuilder()->getEntityManager();
+
+            $out = [];
+            // loop over the posts
+            foreach ($this->lastFetchAllResult as $result) {
+                $addedColumns = [];
+                if(is_array($result)) {
+                    $instance = reset($result);
+                    unset($result[0]);
+                    $addedColumns = $result;
+                } else {
+                    $instance = $result;
+                }
+                if(!isset($ref)) {
+                    $ref = new \ReflectionClass($instance);
+                }
+
+                $classMetaData = $em->getClassMetadata($ref->getName());
+                $fieldNames = $classMetaData->getFieldNames();
+                $columnNames = $classMetaData->getColumnNames();
+
+                $item = [];
+                foreach ($fieldNames as $key => $fieldName) {
+                    $method = sprintf('get%s', ucwords($fieldName));
+                    $item[$columnNames[$key]] = $instance->{$method}();
+                }
+                if(count($addedColumns) > 0) {
+                    $item = array_merge($item, $addedColumns);
+                }
+
+                $out[] = $item;
+            }
+
+            return $this->fixResult($out);
 
         } catch (NoResultException $e) {
             return [];
         }
+    }
+
+    /**
+     * Get raw data from last fetchAll()
+     *
+     * IMPORTANT! fetchAll() must be called before call this method
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function fetchLastRawRows()
+    {
+        if(is_null($this->lastFetchAllResult)) {
+            throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
+        }
+        return $this->lastFetchAllResult;
     }
 
     /**

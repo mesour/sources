@@ -29,7 +29,7 @@ $conn = array(
     'driver'   => 'pdo_mysql',
     'user'     => 'root',
     'password' => 'root',
-    'dbname'   => 'demo.mesour.com',
+    'dbname'   => 'sources_test',
 );
 
 // obtaining the entity manager

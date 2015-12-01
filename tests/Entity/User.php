@@ -29,6 +29,13 @@ class User
     private $action;
 
     /**
+     * @var integer
+     *
+     * @ORM\Column(name="group_id", type="integer", nullable=true)
+     */
+    private $groupId;
+
+    /**
      * @var string
      *
      * @ORM\Column(name="name", type="string", length=64, nullable=true)
@@ -127,6 +134,30 @@ class User
     public function getAction()
     {
         return $this->action;
+    }
+
+    /**
+     * Set groupId
+     *
+     * @param integer $groupId
+     *
+     * @return User
+     */
+    public function setGroupId($groupId)
+    {
+        $this->groupId = $groupId;
+
+        return $this;
+    }
+
+    /**
+     * Get groupId
+     *
+     * @return integer
+     */
+    public function getGroupId()
+    {
+        return $this->groupId;
     }
 
     /**
@@ -321,14 +352,15 @@ class User
         return $this->timestamp;
     }
 
+
     /**
-     * Set group
+     * Set groups
      *
      * @param \Groups $groups
      *
      * @return User
      */
-    public function setGroup(\Groups $groups = null)
+    public function setGroups(\Groups $groups = null)
     {
         $this->groups = $groups;
 
@@ -336,11 +368,11 @@ class User
     }
 
     /**
-     * Get group
+     * Get groups
      *
      * @return \Groups
      */
-    public function getGroup()
+    public function getGroups()
     {
         return $this->groups;
     }

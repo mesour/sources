@@ -3,11 +3,13 @@ namespace Test;
 
 require_once __DIR__ . '/../bootstrap.php';
 
+use Mesour\Sources\DoctrineSource;
 use Mesour\Sources\ISource;
 use Mesour\Sources\NetteDbSource;
 use Tester\Assert;
+use \Tester\TestCase;
 
-abstract class DataSourceTestCase extends \Tester\TestCase
+abstract class DataSourceTestCase extends TestCase
 {
     CONST DEFAULT_PRIMARY_KEY = 'id',
         OWN_PRIMARY_KEY = 'user_id',

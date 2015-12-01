@@ -17,6 +17,8 @@ $entityManager = require_once __DIR__ . '/bootstrap.php';
 require_once '../tests/Entity/User.php';
 require_once '../tests/Entity/Groups.php';
 
+\Tracy\Debugger::enable(\Tracy\Debugger::DEVELOPMENT, __DIR__ . '/log');
+
 ?>
 
 <hr>
@@ -77,12 +79,14 @@ require_once '../tests/Entity/Groups.php';
         'group_name' => 'gr.name',
     ]);
 
+    $source->setPrimaryKey('user_id');
+
     dump($source->setRelated('groups', 'group_id', 'name', 'group_name', 'id'));
     dump($source->where('u.email= :email', ['email' => 'john.doe@test.xx']));
     dump($source->fetch());
     dump($source->fetchPairs('user_id', 'group_name'));
     dump($source->fetchAll());
-    dump($source->fetchFullData());
+    dump($source->fetchLastRawRows());
     dump($source->count());
     dump($source->getTotalCount());
     $groupsSource = $source->related('groups');

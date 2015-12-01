@@ -5,7 +5,7 @@
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Groups
+ * Group
  *
  * @ORM\Table(name="groups")
  * @ORM\Entity
@@ -44,7 +44,7 @@ class Groups
      *
      * @param string $name
      *
-     * @return Group
+     * @return Groups
      */
     public function setName($name)
     {

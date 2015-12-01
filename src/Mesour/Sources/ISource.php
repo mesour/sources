@@ -56,6 +56,15 @@ interface ISource
     public function fetchAll();
 
     /**
+     * Get raw data from last fetchAll()
+     *
+     * IMPORTANT! fetchAll() must be called before call this method
+     *
+     * @return array
+     */
+    public function fetchLastRawRows();
+
+    /**
      * Get first element from data
      *
      * @return mixed
