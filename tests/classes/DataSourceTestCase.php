@@ -1,5 +1,5 @@
 <?php
-namespace Test;
+namespace Mesour\Sources\Tests;
 
 require_once __DIR__ . '/../bootstrap.php';
 
@@ -13,6 +13,7 @@ abstract class DataSourceTestCase extends TestCase
 {
     CONST DEFAULT_PRIMARY_KEY = 'id',
         OWN_PRIMARY_KEY = 'user_id',
+        OWN_PRIMARY_KEY_DOCTRINE = 'userId',
         FULL_USER_COUNT = 20,
         COLUMN_COUNT = 11,
         ACTIVE_COUNT = 10,
@@ -27,14 +28,12 @@ abstract class DataSourceTestCase extends TestCase
         LIMIT = 5,
         OFFSET = 2;
 
-    protected $credentials = array(
-        'dsn' => "mysql:host=127.0.0.1;dbname=sources_test",
+    protected $credentials = [
         'user' => 'root',
-        'password' => 'root',
-        'database' => '',
-    );
+        'password' => '',
+    ];
 
-    private $pairs = array(
+    private $pairs = [
         '1' => 'John',
         '2' => 'Peter',
         '3' => 'Claude',
@@ -55,13 +54,37 @@ abstract class DataSourceTestCase extends TestCase
         '18' => 'Douglas',
         '19' => 'Patti',
         '20' => 'John',
-    );
+    ];
+
+    protected $baseConnection;
+
+    /** @var DatabaseFactory */
+    protected $databaseFactory;
+
+    public function __construct()
+    {
+        $this->databaseFactory = new DatabaseFactory(
+            'localhost', $this->credentials['user'],
+            $this->credentials['password'], 'mesour_sources_'
+        );
+        $this->baseConnection = $this->databaseFactory->create();
+    }
+
+    public function __destruct()
+    {
+        $this->databaseFactory->destroy($this->baseConnection);
+    }
+
+    private function getOwnPrimaryKey(ISource $source)
+    {
+        return $source instanceof DoctrineSource ? self::OWN_PRIMARY_KEY_DOCTRINE : self::OWN_PRIMARY_KEY;
+    }
 
     protected function matchPrimaryKey(ISource $source)
     {
         Assert::same(self::DEFAULT_PRIMARY_KEY, $source->getPrimaryKey());
-        $source->setPrimaryKey(self::OWN_PRIMARY_KEY);
-        Assert::same(self::OWN_PRIMARY_KEY, $source->getPrimaryKey());
+        $source->setPrimaryKey($this->getOwnPrimaryKey($source));
+        Assert::same($this->getOwnPrimaryKey($source), $source->getPrimaryKey());
     }
 
     protected function matchTotalCount(ISource $source)
@@ -77,7 +100,7 @@ abstract class DataSourceTestCase extends TestCase
 
     protected function matchPairs(ISource $source)
     {
-        Assert::same($this->pairs, $source->fetchPairs('user_id', 'name'));
+        Assert::same($this->pairs, $source->fetchPairs($this->getOwnPrimaryKey($source), 'name'));
     }
 
     protected function matchOffset(ISource $source)
@@ -85,7 +108,7 @@ abstract class DataSourceTestCase extends TestCase
         $source->applyLimit(self::LIMIT, self::OFFSET);
         $all_data = $this->assertLimit($source);
         $first_user = reset($all_data);
-        Assert::equal((string)(self::OFFSET + 1), (string)$first_user['user_id']);
+        Assert::equal((string)(self::OFFSET + 1), (string)$first_user[$this->getOwnPrimaryKey($source)]);
     }
 
     protected function matchWhere(ISource $source)
@@ -106,10 +129,10 @@ abstract class DataSourceTestCase extends TestCase
     private function assertCounts(ISource $source, $active_count, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT, $fetch = FALSE)
     {
         $itemData = $source->fetch();
-        if($itemData && $source instanceof NetteDbSource) {
+        if ($itemData && $source instanceof NetteDbSource) {
             $itemData = $itemData->toArray();
         }
-        if(!$fetch) {
+        if (!$fetch) {
             Assert::count($columns, $itemData);
         } else {
             Assert::same(FALSE, $itemData);

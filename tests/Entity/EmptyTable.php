@@ -1,11 +1,11 @@
 <?php
 
-
+namespace Mesour\Sources\Tests\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Empty
+ * Mesour\Sources\Tests\Entity\Empty
  *
  * @ORM\Table(name="empty")
  * @ORM\Entity

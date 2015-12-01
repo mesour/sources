@@ -67,31 +67,30 @@ require_once '../tests/Entity/Groups.php';
     $qb = $entityManager->createQueryBuilder();
     $qb
         ->select('u')
-        ->from('user', 'u')
+        ->from('Mesour\Sources\Tests\Entity\User', 'u')
         ->where('u.name= :name')
         ->setParameter('name', 'john')
         ;
 
     $source = new \Mesour\Sources\DoctrineSource($qb, [
-        'user_id' => 'u.userId',
-        'group_id' => 'u.groups',
-        'last_login' => 'u.lastLogin',
-        'group_name' => 'gr.name',
+        'userId' => 'u.userId',
+        'groupName' => 'gr.name',
     ]);
 
-    $source->setPrimaryKey('user_id');
+    $source->setPrimaryKey('userId');
 
-    dump($source->setRelated('groups', 'group_id', 'name', 'group_name', 'id'));
+    /*
+    dump($source->setRelated('groups', 'groupId', 'name', 'groupName', 'id'));
     dump($source->where('u.email= :email', ['email' => 'john.doe@test.xx']));
     dump($source->fetch());
-    dump($source->fetchPairs('user_id', 'group_name'));
+    dump($source->fetchPairs('userId', 'groupName'));
     dump($source->fetchAll());
     dump($source->fetchLastRawRows());
     dump($source->count());
     dump($source->getTotalCount());
     $groupsSource = $source->related('groups');
     dump($groupsSource->fetchAll());
-
+    */
 
 
     $table->setSource($data);

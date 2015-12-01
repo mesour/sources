@@ -1,11 +1,11 @@
 <?php
 
-
+namespace Mesour\Sources\Tests\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Group
+ * Mesour\Sources\Tests\Entity\Group
  *
  * @ORM\Table(name="groups")
  * @ORM\Entity

@@ -1,11 +1,11 @@
 <?php
 
-
+namespace Mesour\Sources\Tests\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * User
+ * Mesour\Sources\Tests\Entity\User
  *
  * @ORM\Table(name="user", indexes={@ORM\Index(name="action", columns={"action"}), @ORM\Index(name="group_id", columns={"group_id"})})
  * @ORM\Entity
@@ -92,7 +92,7 @@ class User
     private $timestamp;
 
     /**
-     * @var \Groups
+     * @var Groups
      *
      * @ORM\ManyToOne(targetEntity="Groups")
      * @ORM\JoinColumns({
@@ -172,6 +172,16 @@ class User
         $this->name = $name;
 
         return $this;
+    }
+
+    /**
+     * Get name with surname
+     *
+     * @return string
+     */
+    public function getFullName()
+    {
+        return $this->getName() . ' ' . $this->getSurname();
     }
 
     /**
@@ -356,11 +366,11 @@ class User
     /**
      * Set groups
      *
-     * @param \Groups $groups
+     * @param Groups $groups
      *
      * @return User
      */
-    public function setGroups(\Groups $groups = null)
+    public function setGroups(Groups $groups = null)
     {
         $this->groups = $groups;
 
@@ -370,7 +380,7 @@ class User
     /**
      * Get groups
      *
-     * @return \Groups
+     * @return Groups
      */
     public function getGroups()
     {

@@ -1,11 +1,16 @@
 <?php
 
+namespace Mesour\Sources\Tests;
+
 use Mesour\Sources\DoctrineSource;
+use Mesour\Sources\Exception;
+use Mesour\Sources\Tests\Entity\User;
 use Tester\Assert;
+use Mesour\Sources\Tests\Entity\Groups;
 
 require_once __DIR__ . '/../classes/DataSourceTestCase.php';
 
-class DoctrineSourceTest extends \Test\DataSourceTestCase
+class DoctrineSourceTest extends DataSourceTestCase
 {
 
     /**
@@ -23,10 +28,10 @@ class DoctrineSourceTest extends \Test\DataSourceTestCase
      */
     private $empty;
 
-    private $primaryKey = 'user_id';
+    private $primaryKey = 'userId';
 
     private $columnMapping = [
-        'user_id' => 'u.userId',
+        'userId' => 'u.userId',
         'group_id' => 'u.groups',
         'last_login' => 'u.lastLogin',
         'group_name' => 'gr.name',
@@ -34,13 +39,23 @@ class DoctrineSourceTest extends \Test\DataSourceTestCase
 
     public function __construct()
     {
+        parent::__construct();
+
+        // settings for next required file
+        $conn = [
+            'driver'   => 'pdo_mysql',
+            'user'     => $this->databaseFactory->getUserName(),
+            'password' => $this->databaseFactory->getPassword(),
+            'dbname'   => $this->databaseFactory->getDatabaseName(),
+        ];
         $this->entityManager = require_once __DIR__ . '/../../demo/bootstrap.php';
+
         $this->user = $this->entityManager->createQueryBuilder()
             ->select('u')
-            ->from('user', 'u');
+            ->from('Mesour\Sources\Tests\Entity\User', 'u');
         $this->empty = $this->entityManager->createQueryBuilder()
             ->select('e')
-            ->from('emptyTable', 'e');
+            ->from('Mesour\Sources\Tests\Entity\emptyTable', 'e');
     }
 
     public function testPrimaryKey()
@@ -95,7 +110,7 @@ class DoctrineSourceTest extends \Test\DataSourceTestCase
 
     public function testEmpty()
     {
-        $source = new DoctrineSource($this->empty, $this->columnMapping);
+        $source = new DoctrineSource($this->empty);
         $source->setPrimaryKey($this->primaryKey);
         $this->matchEmpty($source);
     }
@@ -105,16 +120,35 @@ class DoctrineSourceTest extends \Test\DataSourceTestCase
         $source = new DoctrineSource($this->user, $this->columnMapping);
         $source->setPrimaryKey($this->primaryKey);
 
-        Assert::same(FALSE, $source->isRelated('group'));
+        Assert::same(FALSE, $source->isRelated(Groups::class));
 
-        $source->setRelated('groups', 'group_id', 'name', 'group_name');
+        $source->setRelated(Groups::class, 'group_id', 'name', 'group_name');
 
-        Assert::same(TRUE, $source->isRelated('groups'));
+        Assert::same(TRUE, $source->isRelated(Groups::class));
 
-        $related = $source->related('groups');
+        $related = $source->related(Groups::class);
 
         Assert::type('Mesour\Sources\DoctrineSource', $related);
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
+    }
+
+    public function testFetchLastRawRows()
+    {
+        $source = new DoctrineSource($this->user, $this->columnMapping);
+        $source->setPrimaryKey($this->primaryKey);
+
+        Assert::exception(function () use ($source) {
+            $source->fetchLastRawRows();
+        }, Exception::class);
+
+        $source->fetchAll();
+
+        $rawData = $source->fetchLastRawRows();
+
+        Assert::count(self::FULL_USER_COUNT, $rawData);
+        foreach ($rawData as $item) {
+            Assert::type(User::class, $item);
+        }
     }
 
 }

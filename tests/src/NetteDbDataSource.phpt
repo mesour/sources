@@ -1,11 +1,16 @@
 <?php
 
+namespace Mesour\Sources\Tests;
+
+use Mesour\Sources\Exception;
 use Mesour\Sources\NetteDbSource;
+use Nette\Caching\Storages\MemoryStorage;
 use Tester\Assert;
+use Nette\Database;
 
 require_once __DIR__ . '/../classes/DataSourceTestCase.php';
 
-class NetteDbSourceTest extends \Test\DataSourceTestCase
+class NetteDbSourceTest extends DataSourceTestCase
 {
 
     /**
@@ -30,13 +35,19 @@ class NetteDbSourceTest extends \Test\DataSourceTestCase
 
     public function __construct()
     {
-        $this->connection = new Nette\Database\Connection($this->credentials['dsn'], $this->credentials['user'], $this->credentials['password']);
+        parent::__construct();
 
-        $cacheMemoryStorage = new Nette\Caching\Storages\MemoryStorage;
+        $this->connection = new Database\Connection(
+            $this->baseConnection->getDsn(),
+            $this->databaseFactory->getUserName(),
+            $this->databaseFactory->getPassword()
+        );
 
-        $structure = new Nette\Database\Structure($this->connection, $cacheMemoryStorage);
-        $conventions = new Nette\Database\Conventions\DiscoveredConventions($structure);
-        $this->context = new Nette\Database\Context($this->connection, $structure, $conventions, $cacheMemoryStorage);
+        $cacheMemoryStorage = new MemoryStorage;
+
+        $structure = new Database\Structure($this->connection, $cacheMemoryStorage);
+        $conventions = new Database\Conventions\DiscoveredConventions($structure);
+        $this->context = new Database\Context($this->connection, $structure, $conventions, $cacheMemoryStorage);
 
         $this->user = $this->context->table('user');
         $this->empty = $this->context->table('empty');
@@ -96,16 +107,35 @@ class NetteDbSourceTest extends \Test\DataSourceTestCase
     {
         $source = new NetteDbSource($this->user, $this->context);
 
-        Assert::same(FALSE, $source->isRelated('groups'));
+        Assert::same(FALSE, $source->isRelated('group'));
 
-        $source->setRelated('groups', 'group_id', 'name', 'group_name');
+        $source->setRelated('group', 'group_id', 'name', 'group_name');
 
-        Assert::same(TRUE, $source->isRelated('groups'));
+        Assert::same(TRUE, $source->isRelated('group'));
 
-        $related = $source->related('groups');
+        $related = $source->related('group');
 
         Assert::type('Mesour\Sources\NetteDbSource', $related);
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
+    }
+
+    public function testFetchLastRawRows()
+    {
+        $source = new NetteDbSource($this->user, $this->context);
+        $source->setPrimaryKey('user_id');
+
+        Assert::exception(function () use ($source) {
+            $source->fetchLastRawRows();
+        }, Exception::class);
+
+        $source->fetchAll();
+
+        $rawData = $source->fetchLastRawRows();
+
+        Assert::count(self::FULL_USER_COUNT, $rawData);
+        foreach ($rawData as $item) {
+            Assert::type(Database\Table\ActiveRow::class, $item);
+        }
     }
 
 }

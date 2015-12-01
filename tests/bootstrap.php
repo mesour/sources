@@ -16,6 +16,9 @@ require_once __DIR__ . '/Entity/EmptyTable.php';
 require_once __DIR__ . '/Entity/User.php';
 require_once __DIR__ . '/Entity/Groups.php';
 
+require_once __DIR__ . '/classes/Connection.php';
+require_once __DIR__ . '/classes/DatabaseFactory.php';
+
 if (!class_exists('Tester\Assert')) {
     echo "Install Nette Tester using `composer update --dev`\n";
     exit(1);

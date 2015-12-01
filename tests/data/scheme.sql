@@ -1,3 +1,19 @@
+-- Adminer 4.2.1 MySQL dump
+
+SET NAMES utf8;
+SET time_zone = '+00:00';
+SET foreign_key_checks = 0;
+SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
+
+DROP TABLE IF EXISTS `empty`;
+CREATE TABLE `empty` (
+  `empty_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL,
+  `surname` varchar(64) NOT NULL,
+  PRIMARY KEY (`empty_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 DROP TABLE IF EXISTS `group`;
 CREATE TABLE `group` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -6,6 +22,18 @@ CREATE TABLE `group` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
 
 INSERT INTO `group` (`id`, `name`) VALUES
+(1,	'Group 1'),
+(2,	'Group 2'),
+(3,	'Group 3');
+
+DROP TABLE IF EXISTS `groups`;
+CREATE TABLE `groups` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(32) COLLATE utf8_estonian_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
+
+INSERT INTO `groups` (`id`, `name`) VALUES
 (1,	'Group 1'),
 (2,	'Group 2'),
 (3,	'Group 3');
@@ -26,7 +54,7 @@ CREATE TABLE `user` (
   PRIMARY KEY (`user_id`),
   KEY `action` (`action`),
   KEY `group_id` (`group_id`),
-  CONSTRAINT `user_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `group` (`id`) ON UPDATE CASCADE
+  CONSTRAINT `user_ibfk_2` FOREIGN KEY (`group_id`) REFERENCES `group` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `user` (`user_id`, `action`, `group_id`, `name`, `surname`, `email`, `last_login`, `amount`, `avatar`, `order`, `timestamp`) VALUES
@@ -51,10 +79,4 @@ INSERT INTO `user` (`user_id`, `action`, `group_id`, `name`, `surname`, `email`,
 (19,	1,	2,	'Patti',	'Diaz',	'patti.diaz@test.xx',	'2014-09-11 12:17:16',	1500,	'/avatar/19.png',	80,	1418255275),
 (20,	0,	1,	'John',	'Petterson',	'john.petterson@test.xx',	'2014-10-10 10:10:10',	2500,	'/avatar/20.png',	190,	1418255275);
 
-DROP TABLE IF EXISTS `empty`;
-CREATE TABLE `empty` (
-  `empty_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(64) NOT NULL,
-  `surname` varchar(64) NOT NULL,
-  PRIMARY KEY (`empty_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-- 2015-12-01 16:38:24

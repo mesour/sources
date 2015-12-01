@@ -25,12 +25,14 @@ $config->setMetadataDriverImpl($driver);
 //$config = Setup::createYAMLMetadataConfiguration(array(__DIR__."/config/yaml"), $isDevMode);
 
 // database configuration parameters
-$conn = array(
-    'driver'   => 'pdo_mysql',
-    'user'     => 'root',
-    'password' => 'root',
-    'dbname'   => 'sources_test',
-);
+if(!isset($conn)) {
+    $conn = array(
+        'driver'   => 'pdo_mysql',
+        'user'     => 'root',
+        'password' => 'root',
+        'dbname'   => 'sources_test',
+    );
+}
 
 // obtaining the entity manager
 return EntityManager::create($conn, $config);

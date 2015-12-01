@@ -1,11 +1,16 @@
 <?php
 
+namespace Mesour\Sources\Tests;
+
+use Mesour\ArrayManage\Searcher\Condition;
 use Mesour\Sources\ArraySource;
+use Mesour\Sources\Exception;
 use Tester\Assert;
+use Mesour\Sources\ArrayHash;
 
 require_once __DIR__ . '/../classes/DataSourceTestCase.php';
 
-class ArraySourceTest extends \Test\DataSourceTestCase
+class ArraySourceTest extends DataSourceTestCase
 {
 
     private $user = array(
@@ -54,7 +59,7 @@ class ArraySourceTest extends \Test\DataSourceTestCase
     public function testFetch()
     {
         $source = new ArraySource($this->user);
-        Assert::equal($source->fetch(), \Mesour\Sources\ArrayHash::from(reset($this->user)));
+        Assert::equal($source->fetch(), ArrayHash::from(reset($this->user)));
     }
 
     public function testFetchPairs()
@@ -79,7 +84,7 @@ class ArraySourceTest extends \Test\DataSourceTestCase
     public function testWhere()
     {
         $source = new ArraySource($this->user);
-        $source->where('action', self::ACTIVE_STATUS, \Mesour\ArrayManage\Searcher\Condition::EQUAL);
+        $source->where('action', self::ACTIVE_STATUS, Condition::EQUAL);
         $this->matchWhere($source);
     }
 
@@ -89,7 +94,7 @@ class ArraySourceTest extends \Test\DataSourceTestCase
         $source->setStructure(array(
             'last_login' => 'date'
         ));
-        $source->where('last_login', self::DATE_BIGGER, \Mesour\ArrayManage\Searcher\Condition::BIGGER);
+        $source->where('last_login', self::DATE_BIGGER, Condition::BIGGER);
         $this->matchWhereDate($source);
     }
 
@@ -114,6 +119,25 @@ class ArraySourceTest extends \Test\DataSourceTestCase
         Assert::type('Mesour\Sources\ArraySource', $related);
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
         Assert::same(count($source->fetch()), self::COLUMN_COUNT + 1); // + 1 because using related (group_name column)
+    }
+
+    public function testFetchLastRawRows()
+    {
+        $source = new ArraySource($this->user, $this->relations);
+        $source->setPrimaryKey('user_id');
+
+        Assert::exception(function () use ($source) {
+            $source->fetchLastRawRows();
+        }, Exception::class);
+
+        $source->fetchAll();
+
+        $rawData = $source->fetchLastRawRows();
+
+        Assert::count(self::FULL_USER_COUNT, $rawData);
+        foreach ($rawData as $item) {
+            Assert::type(ArrayHash::class, $item);
+        }
     }
 
 }

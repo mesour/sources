@@ -249,18 +249,14 @@ class DoctrineSource implements ISource
                 } else {
                     $instance = $result;
                 }
-                if(!isset($ref)) {
-                    $ref = new \ReflectionClass($instance);
-                }
 
-                $classMetaData = $em->getClassMetadata($ref->getName());
+                $classMetaData = $em->getClassMetadata(get_class($instance));
                 $fieldNames = $classMetaData->getFieldNames();
-                $columnNames = $classMetaData->getColumnNames();
 
                 $item = [];
                 foreach ($fieldNames as $key => $fieldName) {
                     $method = sprintf('get%s', ucwords($fieldName));
-                    $item[$columnNames[$key]] = $instance->{$method}();
+                    $item[$fieldName] = $instance->{$method}();
                 }
                 if(count($addedColumns) > 0) {
                     $item = array_merge($item, $addedColumns);
@@ -399,7 +395,7 @@ class DoctrineSource implements ISource
                 }
                 foreach ($item as $itemKey => $val) {
                     unset($item[$itemKey]);
-                    $item[$this->getRealColumnName($itemKey)] = $val;
+                    $item[$itemKey] = $val;
                 }
                 $out[] = ArrayHash::from($item);
                 if ($fetch) {
@@ -410,7 +406,7 @@ class DoctrineSource implements ISource
         }
         return $val;
     }
-
+/*
     protected function getRealColumnName($column)
     {
         foreach ($this->columnMapping as $key => $item) {
@@ -423,7 +419,7 @@ class DoctrineSource implements ISource
         }
         return $column;
     }
-
+*/
     /**
      * Add prefix to the column name.
      * @param  string $column Column name
