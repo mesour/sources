@@ -152,7 +152,7 @@ class NetteDbSource implements ISource
      */
     public function fetchLastRawRows()
     {
-        if(is_null($this->lastFetchAllResult)) {
+        if (is_null($this->lastFetchAllResult)) {
             throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
         }
         return $this->lastFetchAllResult;
@@ -205,7 +205,13 @@ class NetteDbSource implements ISource
             throw new Exception('Related require set Nette database context in constructor.');
         }
         if (count($this->related) === 0) {
-            $this->netteTable->select('*');
+            if (method_exists($this->netteTable, 'getSqlBuilder')) {
+                if (count($this->netteTable->getSqlBuilder()->getSelect()) === 0) {
+                    $this->netteTable->select('*');
+                }
+            } else {
+                $this->netteTable->select('*');
+            }
         }
         $this->related[$table] = [$table, $key, $column, $as, $primary, $left];
 
