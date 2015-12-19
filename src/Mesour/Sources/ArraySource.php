@@ -9,8 +9,7 @@
 
 namespace Mesour\Sources;
 
-use Mesour\ArrayManage\Searcher\Condition;
-use Mesour\ArrayManage\Searcher\Select;
+use Mesour;
 
 
 /**
@@ -25,7 +24,7 @@ class ArraySource implements ISource
 
     private $related = [];
 
-    /** @var Select */
+    /** @var Mesour\ArrayManage\Searcher\Select */
     protected $select;
 
     protected $data_arr = [];
@@ -42,7 +41,7 @@ class ArraySource implements ISource
      */
     public function __construct(array $data, array $relations = [])
     {
-        if (!class_exists('\Mesour\ArrayManage\Searcher\Select')) {
+        if (!class_exists(Mesour\ArrayManage\Searcher\Select::class)) {
             throw new MissingRequiredException('Array data source required composer package "mesour/array-manager".');
         }
         $this->data_arr = $data;
@@ -138,7 +137,7 @@ class ArraySource implements ISource
      */
     public function fetchLastRawRows()
     {
-        if(is_null($this->lastFetchAllResult)) {
+        if (is_null($this->lastFetchAllResult)) {
             throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
         }
         return $this->lastFetchAllResult;
@@ -208,12 +207,12 @@ class ArraySource implements ISource
     public function setRelated($table, $key, $column, $as = NULL, $primary = 'id', $left = FALSE)
     {
         $this->related[$table] = [$table, $key, $column, $as, $primary];
-        $related = $this->related($table, $key);
+        $related = $this->related($table);
 
         foreach ($this->data_arr as $_key => $item) {
             $current = clone $related;
             if (isset($item[$key])) {
-                $_item = $current->where($related->getPrimaryKey(), $item[$key], Condition::EQUAL)->fetch();
+                $_item = $current->where($related->getPrimaryKey(), $item[$key], Mesour\ArrayManage\Searcher\Condition::EQUAL)->fetch();
                 $item_name = is_string($as) ? $as : $column;
                 $this->data_arr[$_key][$item_name] = $_item[$column];
                 $this->select = NULL;
@@ -236,11 +235,11 @@ class ArraySource implements ISource
             throw new Exception('Relation ' . $table . ' does not exists.');
         }
         if (!isset($this->relations[$table]) || !$this->relations[$table] instanceof ISource) {
-            if(!is_array($this->relations[$table])) {
+            if (!is_array($this->relations[$table])) {
                 throw new Exception('Relation ' . $table . ' does not exists.');
             }
-            $this->relations[$table] = new static($this->relations[$table]);
-            $this->relations[$table]->setPrimaryKey($this->related[$table][4]);
+            $this->relations[$table] = $source = new static($this->relations[$table]);
+            $source->setPrimaryKey($this->related[$table][4]);
         }
         return $this->relations[$table];
     }
@@ -263,7 +262,7 @@ class ArraySource implements ISource
     }
 
     /**
-     * @return Select
+     * @return Mesour\ArrayManage\Searcher\Select
      * @throws Exception
      */
     protected function getSelect()
@@ -283,7 +282,7 @@ class ArraySource implements ISource
                     }
                 }
             }
-            $this->select = new Select($this->data_arr);
+            $this->select = new Mesour\ArrayManage\Searcher\Select($this->data_arr);
         }
         return $this->select;
     }

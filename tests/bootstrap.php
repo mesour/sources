@@ -10,7 +10,7 @@ require_once SRC_DIR . 'Mesour/Sources/ISource.php';
 require_once SRC_DIR . 'Mesour/Sources/ArraySource.php';
 require_once SRC_DIR . 'Mesour/Sources/NetteDbSource.php';
 require_once SRC_DIR . 'Mesour/Sources/DoctrineSource.php';
-require_once SRC_DIR . 'Mesour/Sources/Exceptions.php';
+require_once SRC_DIR . 'Mesour/Sources/exceptions.php';
 
 require_once __DIR__ . '/Entity/EmptyTable.php';
 require_once __DIR__ . '/Entity/User.php';

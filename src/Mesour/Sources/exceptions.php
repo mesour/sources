@@ -10,9 +10,14 @@
 namespace Mesour\Sources;
 
 
-
-class Exception extends \Exception{
+class Exception extends \Exception
+{
 }
 
-class MissingRequiredException extends Exception {
+class MissingRequiredException extends Exception
+{
+}
+
+class InvalidArgumentException extends \InvalidArgumentException
+{
 }

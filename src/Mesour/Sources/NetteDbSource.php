@@ -231,8 +231,8 @@ class NetteDbSource implements ISource
             throw new Exception('Relation ' . $table . ' does not exists.');
         }
         if (!isset($this->relations[$table])) {
-            $this->relations[$table] = new static($this->context->table($table), $this->context);
-            $this->relations[$table]->setPrimaryKey($this->related[$table][4]);
+            $this->relations[$table] = $source = new static($this->context->table($table), $this->context);
+            $source->setPrimaryKey($this->related[$table][4]);
         }
         return $this->relations[$table];
     }

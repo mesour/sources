@@ -13,8 +13,8 @@ namespace Mesour\Sources;
 class ArrayHash extends \stdClass implements \ArrayAccess, \Countable, \IteratorAggregate
 {
     /**
-     * @param  array to wrap
-     * @param  bool
+     * @param  array $arr to wrap
+     * @param  bool $recursive
      * @return self
      */
     public static function from($arr, $recursive = TRUE)
@@ -50,6 +50,8 @@ class ArrayHash extends \stdClass implements \ArrayAccess, \Countable, \Iterator
 
     /**
      * Replaces or appends a item.
+     * @param string $key
+     * @param mixed $value
      * @return void
      */
     public function offsetSet($key, $value)
@@ -62,6 +64,7 @@ class ArrayHash extends \stdClass implements \ArrayAccess, \Countable, \Iterator
 
     /**
      * Returns a item.
+     * @param string $key
      * @return mixed
      */
     public function offsetGet($key)
@@ -71,6 +74,7 @@ class ArrayHash extends \stdClass implements \ArrayAccess, \Countable, \Iterator
 
     /**
      * Determines whether a item exists.
+     * @param string $key
      * @return bool
      */
     public function offsetExists($key)
@@ -80,6 +84,7 @@ class ArrayHash extends \stdClass implements \ArrayAccess, \Countable, \Iterator
 
     /**
      * Removes the element from this list.
+     * @param string $key
      * @return void
      */
     public function offsetUnset($key)
