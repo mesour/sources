@@ -13,7 +13,7 @@ install:
     - composer install --no-interaction --prefer-source
 
 script:
-    - vendor/bin/tester -p php $COVERAGE tests/
+    - vendor/bin/tester -p php $COVERAGE tests/ -s -c tests/php.ini
 
 services:
     - mysql
