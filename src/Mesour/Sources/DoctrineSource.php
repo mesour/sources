@@ -237,36 +237,10 @@ class DoctrineSource implements ISource
     {
         try {
             $this->lastFetchAllResult = $this->getQuery()->getResult();
-            $em = $this->getQueryBuilder()->getEntityManager();
 
-            $out = [];
-            foreach ($this->lastFetchAllResult as $result) {
-                $addedColumns = [];
-                if (is_array($result)) {
-                    $instance = reset($result);
-                    unset($result[0]);
-                    $addedColumns = $result;
-                } else {
-                    $instance = $result;
-                }
-
-                $classMetaData = $em->getClassMetadata(get_class($instance));
-                $fieldNames = $classMetaData->getFieldNames();
-
-                $item = [];
-                foreach ($fieldNames as $key => $fieldName) {
-                    $method = sprintf('get%s', ucwords($fieldName));
-                    $item[$fieldName] = $instance->{$method}();
-                }
-                if (count($addedColumns) > 0) {
-                    $item = array_merge($item, $addedColumns);
-                }
-
-                $out[] = $item;
-            }
-
-            return $this->fixResult($out);
-
+            return $this->fixResult(
+                $this->getEntityArrayAsArrays($this->lastFetchAllResult)
+            );
         } catch (NoResultException $e) {
             return [];
         }
@@ -367,6 +341,38 @@ class DoctrineSource implements ISource
     public function getAllRelated()
     {
         return $this->related;
+    }
+
+    protected function getEntityArrayAsArrays($results)
+    {
+        $em = $this->getQueryBuilder()->getEntityManager();
+
+        $out = [];
+        foreach ($results as $result) {
+            $addedColumns = [];
+            if (is_array($result)) {
+                $instance = reset($result);
+                unset($result[0]);
+                $addedColumns = $result;
+            } else {
+                $instance = $result;
+            }
+
+            $classMetaData = $em->getClassMetadata(get_class($instance));
+            $fieldNames = $classMetaData->getFieldNames();
+
+            $item = [];
+            foreach ($fieldNames as $key => $fieldName) {
+                $method = sprintf('get%s', ucwords($fieldName));
+                $item[$fieldName] = $instance->{$method}();
+            }
+            if (count($addedColumns) > 0) {
+                $item = array_merge($item, $addedColumns);
+            }
+
+            $out[] = $item;
+        }
+        return $out;
     }
 
     protected function fixResult(array $val, $fetch = FALSE)
