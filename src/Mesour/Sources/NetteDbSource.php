@@ -182,7 +182,11 @@ class NetteDbSource implements ISource
     public function fetch()
     {
         if ($this->totalCount > 0) {
-            return $this->makeArrayHash($this->getSelection(FALSE, FALSE)->fetch());
+            return $this->makeArrayHash(
+                $this->getSelection(FALSE, FALSE)
+                    ->fetch()
+                    ->toArray()
+            );
         } else {
             return FALSE;
         }

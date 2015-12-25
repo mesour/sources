@@ -5,7 +5,6 @@ require_once __DIR__ . '/../bootstrap.php';
 
 use Mesour\Sources\DoctrineSource;
 use Mesour\Sources\ISource;
-use Mesour\Sources\NetteDbSource;
 use Tester\Assert;
 use \Tester\TestCase;
 
@@ -64,7 +63,7 @@ abstract class DataSourceTestCase extends TestCase
     public function __construct()
     {
         $this->databaseFactory = new DatabaseFactory(
-            'localhost', $this->credentials['user'],
+            '127.0.0.1', $this->credentials['user'],
             $this->credentials['password'], 'mesour_sources_'
         );
         $this->baseConnection = $this->databaseFactory->create();
@@ -129,9 +128,6 @@ abstract class DataSourceTestCase extends TestCase
     private function assertCounts(ISource $source, $active_count, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT, $fetch = FALSE)
     {
         $itemData = $source->fetch();
-        if ($itemData && $source instanceof NetteDbSource) {
-            $itemData = $itemData->toArray();
-        }
         if (!$fetch) {
             Assert::count($columns, $itemData);
         } else {
