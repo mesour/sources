@@ -9,9 +9,7 @@
 
 namespace Mesour\Sources;
 
-use Nette\Database\Context;
-use Nette\Database\Table\ActiveRow;
-use Nette\Database\Table\Selection;
+use Nette;
 
 
 /**
@@ -27,19 +25,19 @@ class NetteDbSource implements ISource
     private $relations = [];
 
     /**
-     * @var Selection
+     * @var Nette\Database\Table\Selection
      */
     private $netteTable;
 
     /**
-     * @var Context
+     * @var Nette\Database\Context
      */
     private $context;
 
     /**
      * @var array
      */
-    private $where_arr = [];
+    private $whereArr = [];
 
     /**
      * @var integer
@@ -57,10 +55,13 @@ class NetteDbSource implements ISource
     protected $lastFetchAllResult = NULL;
 
     /**
-     * @param Selection $selection
-     * @param Context $context
+     * @param Nette\Database\Table\Selection $selection
+     * @param Nette\Database\Context $context
      */
-    public function __construct(Selection $selection, Context $context = NULL)
+    public function __construct(
+        Nette\Database\Table\Selection $selection,
+        Nette\Database\Context $context = NULL
+    )
     {
         $this->context = $context;
         $this->netteTable = $selection;
@@ -68,7 +69,7 @@ class NetteDbSource implements ISource
     }
 
     /**
-     * @return Selection
+     * @return Nette\Database\Table\Selection
      */
     public function getTableSelection()
     {
@@ -89,7 +90,7 @@ class NetteDbSource implements ISource
      */
     public function where($args)
     {
-        $this->where_arr[] = func_get_args();
+        $this->whereArr[] = func_get_args();
         return $this;
     }
 
@@ -113,15 +114,15 @@ class NetteDbSource implements ISource
     public function count()
     {
         $count = $this->getSelection()->count('*');
-        $to_end = $count - ($this->offset + $this->limit);
-        return !is_null($this->limit) && $this->limit < $count ? ($to_end < $this->limit ? $to_end : $this->limit) : $count;
+        $toEnd = $count - ($this->offset + $this->limit);
+        return !is_null($this->limit) && $this->limit < $count ? ($toEnd < $this->limit ? $toEnd : $this->limit) : $count;
     }
 
     protected function getSelection($limit = TRUE, $where = TRUE)
     {
         $selection = clone $this->netteTable;
         if ($where) {
-            foreach ($this->where_arr as $conditions) {
+            foreach ($this->whereArr as $conditions) {
                 call_user_func_array([$selection, 'where'], $conditions);
             }
         }
@@ -133,13 +134,24 @@ class NetteDbSource implements ISource
 
     /**
      * Get searched values with applied limit, offset and where
-     * @return ActiveRow[]
+     * @return ArrayHash[]
      */
     public function fetchAll()
     {
         $selection = $this->getSelection();
-        $this->lastFetchAllResult = $selection->fetchAll();
-        return $this->lastFetchAllResult;
+        $this->lastFetchAllResult = [];
+        $out = [];
+        foreach ($selection->fetchAll() as $row) {
+            /** @var Nette\Database\Table\ActiveRow $row */
+            $this->lastFetchAllResult[] = $row;
+            $out[] = $this->makeArrayHash($row->toArray());
+        }
+        return $out;
+    }
+
+    protected function makeArrayHash(array $val)
+    {
+        return ArrayHash::from($val);
     }
 
     /**
@@ -165,12 +177,12 @@ class NetteDbSource implements ISource
 
     /**
      * Return first element from data
-     * @return ActiveRow|FALSE
+     * @return ArrayHash|FALSE
      */
     public function fetch()
     {
         if ($this->totalCount > 0) {
-            return $this->getSelection(FALSE, FALSE)->fetch();
+            return $this->makeArrayHash($this->getSelection(FALSE, FALSE)->fetch());
         } else {
             return FALSE;
         }
@@ -254,14 +266,14 @@ class NetteDbSource implements ISource
         return $this->related;
     }
 
-    protected function getRealColumnName($column_name)
+    protected function getRealColumnName($columnName)
     {
         foreach ($this->related as $name => $options) {
-            if ($column_name === $options[3]) {
+            if ($columnName === $options[3]) {
                 return $options[0] . '.' . $options[2];
             }
         }
-        return $column_name;
+        return $columnName;
     }
 
 }

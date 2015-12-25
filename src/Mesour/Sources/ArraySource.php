@@ -18,7 +18,7 @@ use Mesour;
 class ArraySource implements ISource
 {
 
-    private $primary_key = 'id';
+    private $primaryKey = 'id';
 
     private $relations = [];
 
@@ -27,7 +27,7 @@ class ArraySource implements ISource
     /** @var Mesour\ArrayManage\Searcher\Select */
     protected $select;
 
-    protected $data_arr = [];
+    protected $dataArr = [];
 
     /** @var null|array */
     protected $lastFetchAllResult = NULL;
@@ -44,19 +44,19 @@ class ArraySource implements ISource
         if (!class_exists(Mesour\ArrayManage\Searcher\Select::class)) {
             throw new MissingRequiredException('Array data source required composer package "mesour/array-manager".');
         }
-        $this->data_arr = $data;
+        $this->dataArr = $data;
         $this->relations = $relations;
     }
 
-    public function setPrimaryKey($primary_key)
+    public function setPrimaryKey($primaryKey)
     {
-        $this->primary_key = $primary_key;
+        $this->primaryKey = $primaryKey;
         return $this;
     }
 
     public function getPrimaryKey()
     {
-        return $this->primary_key;
+        return $this->primaryKey;
     }
 
     /**
@@ -209,12 +209,12 @@ class ArraySource implements ISource
         $this->related[$table] = [$table, $key, $column, $as, $primary];
         $related = $this->related($table);
 
-        foreach ($this->data_arr as $_key => $item) {
+        foreach ($this->dataArr as $_key => $item) {
             $current = clone $related;
             if (isset($item[$key])) {
                 $_item = $current->where($related->getPrimaryKey(), $item[$key], Mesour\ArrayManage\Searcher\Condition::EQUAL)->fetch();
                 $item_name = is_string($as) ? $as : $column;
-                $this->data_arr[$_key][$item_name] = $_item[$column];
+                $this->dataArr[$_key][$item_name] = $_item[$column];
                 $this->select = NULL;
             } else {
                 throw new Exception('Column ' . $key . ' does not exist in data array.');
@@ -272,17 +272,17 @@ class ArraySource implements ISource
                 foreach ($this->structure as $name => $value) {
                     switch ($value) {
                         case 'date':
-                            foreach ($this->data_arr as $key => $item) {
+                            foreach ($this->dataArr as $key => $item) {
                                 if (!array_key_exists($name, $item)) {
                                     throw new Exception('Column ' . $name . ' does not exists in source array.');
                                 }
-                                $this->data_arr[$key]['__date_' . $name] = $this->fixDate($item[$name]);
+                                $this->dataArr[$key]['__date_' . $name] = $this->fixDate($item[$name]);
                             }
                             break;
                     }
                 }
             }
-            $this->select = new Mesour\ArrayManage\Searcher\Select($this->data_arr);
+            $this->select = new Mesour\ArrayManage\Searcher\Select($this->dataArr);
         }
         return $this->select;
     }

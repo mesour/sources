@@ -61,7 +61,7 @@ class DoctrineSource implements ISource
     /**
      * Initialize Doctrine data source with QueryBuilder instance.
      * @param QueryBuilder $queryBuilder Source of data
-     * @param array $columnMapping Column name mapper
+     * @param array $columnMapping       Column name mapper
      */
     public function __construct(QueryBuilder $queryBuilder, array $columnMapping = [])
     {
@@ -100,7 +100,7 @@ class DoctrineSource implements ISource
         if (!$resetLimit && is_numeric($this->limit)) {
             $queryBuilder->setMaxResults($this->limit);
 
-            if($this->offset > 0) {
+            if ($this->offset > 0) {
                 $queryBuilder->setFirstResult($this->offset);
             }
         }
@@ -147,7 +147,7 @@ class DoctrineSource implements ISource
 
     /**
      * Apply limit and offset.
-     * @param  int $limit Number of rows
+     * @param  int $limit  Number of rows
      * @param  int $offset Rows to skip
      * @return static
      */
@@ -175,7 +175,7 @@ class DoctrineSource implements ISource
 
     /**
      * Add ORDER BY directive to the criteria.
-     * @param  string $column Column name
+     * @param  string $column  Column name
      * @param  string $sorting Sorting direction
      * @return static
      */
@@ -193,21 +193,21 @@ class DoctrineSource implements ISource
     public function count()
     {
         $totalCount = $this->getTotalCount();
-        if(!is_null($this->limit)) {
-            if($this->offset >= 0) {
+        if (!is_null($this->limit)) {
+            if ($this->offset >= 0) {
                 $offset = ($this->offset + 1);
-                if($totalCount - $offset <= 0) {
+                if ($totalCount - $offset <= 0) {
                     return 0;
                 }
-                if($totalCount - $offset >= $this->limit) {
+                if ($totalCount - $offset >= $this->limit) {
                     return $this->limit;
-                } elseif($totalCount - $offset < $this->limit) {
+                } elseif ($totalCount - $offset < $this->limit) {
                     return $totalCount - $offset;
                 }
             } else {
-                if($totalCount >= $this->limit) {
+                if ($totalCount >= $this->limit) {
                     return $this->limit;
-                } elseif($totalCount < $this->limit) {
+                } elseif ($totalCount < $this->limit) {
                     return $totalCount;
                 }
             }
@@ -242,7 +242,7 @@ class DoctrineSource implements ISource
             $out = [];
             foreach ($this->lastFetchAllResult as $result) {
                 $addedColumns = [];
-                if(is_array($result)) {
+                if (is_array($result)) {
                     $instance = reset($result);
                     unset($result[0]);
                     $addedColumns = $result;
@@ -258,7 +258,7 @@ class DoctrineSource implements ISource
                     $method = sprintf('get%s', ucwords($fieldName));
                     $item[$fieldName] = $instance->{$method}();
                 }
-                if(count($addedColumns) > 0) {
+                if (count($addedColumns) > 0) {
                     $item = array_merge($item, $addedColumns);
                 }
 
@@ -282,7 +282,7 @@ class DoctrineSource implements ISource
      */
     public function fetchLastRawRows()
     {
-        if(is_null($this->lastFetchAllResult)) {
+        if (is_null($this->lastFetchAllResult)) {
             throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
         }
         return $this->lastFetchAllResult;
@@ -375,7 +375,7 @@ class DoctrineSource implements ISource
             $hasSubArray = is_array(reset($val));
 
             if (!$hasSubArray) {
-                return ArrayHash::from($val);
+                return $this->makeArrayHash($val);
             }
             $out = [];
             if ($fetch) {
@@ -397,7 +397,7 @@ class DoctrineSource implements ISource
                     unset($item[$itemKey]);
                     $item[$itemKey] = $val;
                 }
-                $out[] = ArrayHash::from($item);
+                $out[] = $this->makeArrayHash($item);
                 if ($fetch) {
                     return reset($out);
                 }
@@ -406,20 +406,25 @@ class DoctrineSource implements ISource
         }
         return $val;
     }
-/*
-    protected function getRealColumnName($column)
-    {
-        foreach ($this->columnMapping as $key => $item) {
-            $parts = explode('.', $item);
-            $name = end($parts);
 
-            if ($column === $item || $column === $name) {
-                return $key;
-            }
-        }
-        return $column;
+    public function makeArrayHash(array $data)
+    {
+        return ArrayHash::from($data);
     }
-*/
+    /*
+        protected function getRealColumnName($column)
+        {
+            foreach ($this->columnMapping as $key => $item) {
+                $parts = explode('.', $item);
+                $name = end($parts);
+
+                if ($column === $item || $column === $name) {
+                    return $key;
+                }
+            }
+            return $column;
+        }
+    */
     /**
      * Add prefix to the column name.
      * @param  string $column Column name
