@@ -27,7 +27,7 @@ $config->setMetadataDriverImpl($driver);
 // database configuration parameters
 if(!isset($conn)) {
     $conn = array(
-        'driver'   => 'pdo_mysql',
+        'driver'   => 'mysqli',
         'host'     => '127.0.0.1',
         'user'     => 'root',
         'password' => 'root',
