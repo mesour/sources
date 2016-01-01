@@ -271,7 +271,6 @@ class DoctrineSource implements ISource
         return $this->primaryKey;
     }
 
-
     /**
      * Set new primary column name.
      * @param  string $column Column name
@@ -299,7 +298,9 @@ class DoctrineSource implements ISource
 
     public function setRelated($table, $key, $column, $as = NULL, $primary = 'id', $left = FALSE)
     {
-        $newPrefix = substr($table, 0, 2);
+        $path = explode('\\', $table);
+        $shortClassName =  array_pop($path);
+        $newPrefix = substr(strtolower($shortClassName), 0, 2);
 
         $this->related[$table] = [
             $table, $key, $column, $as, $primary, $left, $newPrefix
