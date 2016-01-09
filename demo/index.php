@@ -29,7 +29,27 @@ require_once '../tests/Entity/Groups.php';
     <hr>
 
     <?php
+/*
+    $connection = new \Nette\Database\Connection(
+        'mysql:host=127.0.0.1;dbname=voip', 'root', 'root'
+    );
+    $cacheMemoryStorage = new \Nette\Caching\Storages\MemoryStorage;
+    $structure = new \Nette\Database\Structure($connection, $cacheMemoryStorage);
+    $conventions = new \Nette\Database\Conventions\DiscoveredConventions($structure);
+    $context = new \Nette\Database\Context($connection, $structure, $conventions, $cacheMemoryStorage);
 
+    $selection = $context->table('missed_calls')
+            ->select('missed_calls.*')
+            //->select('call_category.identifier')
+            ->where('saved IS NOT NULL');
+
+    $source = new \Mesour\Sources\NetteDbSource($selection, $context);
+
+    $source->setRelated('call_categories', 'call_category', 'identifier');
+
+    dump($source->related('call_categories')->fetchAll());
+    die;
+*/
     $table = new \Mesour\UI\Table();
 
     $data = array(
@@ -52,46 +72,6 @@ require_once '../tests/Entity/Groups.php';
             'description' => 'Set render callback.',
         )
     );
-
-    $helperSet = new \Symfony\Component\Console\Helper\HelperSet(array(
-        'db' => new \Doctrine\DBAL\Tools\Console\Helper\ConnectionHelper($entityManager->getConnection()),
-        'em' => new \Doctrine\ORM\Tools\Console\Helper\EntityManagerHelper($entityManager)
-    ));
-
-    /*$product = new \User();
-    $product->setName('test');
-
-    $entityManager->persist($product);
-    $entityManager->flush();*/
-
-    $qb = $entityManager->createQueryBuilder();
-    $qb
-        ->select('u')
-        ->from('Mesour\Sources\Tests\Entity\User', 'u')
-        ->where('u.name= :name')
-        ->setParameter('name', 'john')
-        ;
-
-    $source = new \Mesour\Sources\DoctrineSource($qb, [
-        'userId' => 'u.userId',
-        'groupName' => 'gr.name',
-    ]);
-
-    $source->setPrimaryKey('userId');
-
-    /*
-    dump($source->setRelated('groups', 'groupId', 'name', 'groupName', 'id'));
-    dump($source->where('u.email= :email', ['email' => 'john.doe@test.xx']));
-    dump($source->fetch());
-    dump($source->fetchPairs('userId', 'groupName'));
-    dump($source->fetchAll());
-    dump($source->fetchLastRawRows());
-    dump($source->count());
-    dump($source->getTotalCount());
-    $groupsSource = $source->related('groups');
-    dump($groupsSource->fetchAll());
-    */
-
 
     $table->setSource($data);
 

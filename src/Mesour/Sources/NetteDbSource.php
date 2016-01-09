@@ -231,7 +231,7 @@ class NetteDbSource implements ISource
         }
         $this->related[$table] = [$table, $key, $column, $as, $primary, $left];
 
-        $this->netteTable->select($table . '.' . $column . (!is_null($as) ? (' AS ' . $as) : ''));
+        $this->netteTable->select($key . '.' . $column . (!is_null($as) ? (' AS ' . $as) : ''));
 
         return $this;
     }
