@@ -1,8 +1,6 @@
 <?php
 namespace Mesour\Sources\Tests;
 
-require_once __DIR__ . '/../bootstrap.php';
-
 use Mesour\Sources\DoctrineSource;
 use Mesour\Sources\ISource;
 use Tester\Assert;
@@ -29,7 +27,7 @@ abstract class DataSourceTestCase extends TestCase
 
     protected $credentials = [
         'user' => 'root',
-        'password' => '',
+        'password' => 'root',
     ];
 
     private $pairs = [
