@@ -108,14 +108,14 @@ abstract class DataSourceTestCase extends TestCase
         Assert::equal((string)(self::OFFSET + 1), (string)$first_user[$this->getOwnPrimaryKey($source)]);
     }
 
-    protected function matchWhere(ISource $source)
+    protected function matchWhere(ISource $source, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT)
     {
-        $this->assertCounts($source, self::ACTIVE_COUNT);
+        $this->assertCounts($source, self::ACTIVE_COUNT, $full, $columns);
     }
 
-    protected function matchWhereDate(ISource $source)
+    protected function matchWhereDate(ISource $source, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT)
     {
-        $this->assertCounts($source, self::DATE_BIGGER_COUNT);
+        $this->assertCounts($source, self::DATE_BIGGER_COUNT, $full, $columns);
     }
 
     protected function matchEmpty(ISource $source)

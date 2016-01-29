@@ -31,7 +31,3 @@ define("TEMP_DIR", __DIR__ . "/tmp/");
 Tester\Helpers::purge(TEMP_DIR);
 
 Tester\Environment::setup();
-
-function id($val) {
-    return $val;
-}

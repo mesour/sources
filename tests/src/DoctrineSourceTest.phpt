@@ -4,11 +4,11 @@ namespace Mesour\Sources\Tests;
 
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../classes/DataSourceTestCase.php';
-require_once __DIR__ . '/../classes/BaseArrayDataSource.php';
+require_once __DIR__ . '/../classes/BaseDoctrineSourceTest.php';
 
-class ArraySourceTest extends BaseArraySourceTest
+class DoctrineSourceTest extends BaseDoctrineSourceTest
 {
 }
 
-$test = new ArraySourceTest();
+$test = new DoctrineSourceTest();
 $test->run();

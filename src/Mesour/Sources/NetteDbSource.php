@@ -54,16 +54,20 @@ class NetteDbSource implements ISource
     /** @var null|array */
     protected $lastFetchAllResult = NULL;
 
+    protected $tableName;
+
     /**
      * @param Nette\Database\Table\Selection $selection
      * @param Nette\Database\Context $context
      */
     public function __construct(
         Nette\Database\Table\Selection $selection,
+        $tableName,
         Nette\Database\Context $context = NULL
     )
     {
         $this->context = $context;
+        $this->tableName = $tableName;
         $this->netteTable = $selection;
         $this->totalCount = $selection->count('*');
     }
@@ -200,7 +204,7 @@ class NetteDbSource implements ISource
     public function fetchPairs($key, $value)
     {
         return $this->getSelection()
-            ->select($key)->select($value)
+            ->select($this->getRealColumnName($key))->select($this->getRealColumnName($value))
             ->fetchPairs($key, $value);
     }
 
@@ -231,7 +235,7 @@ class NetteDbSource implements ISource
         }
         $this->related[$table] = [$table, $key, $column, $as, $primary, $left];
 
-        $this->netteTable->select($key . '.' . $column . (!is_null($as) ? (' AS ' . $as) : ''));
+        $this->netteTable->select(str_replace('_id', '', $key) . '.' . $column . (!is_null($as) ? (' AS ' . $as) : ''));
 
         return $this;
     }
@@ -247,7 +251,7 @@ class NetteDbSource implements ISource
             throw new Exception('Relation ' . $table . ' does not exists.');
         }
         if (!isset($this->relations[$table])) {
-            $this->relations[$table] = $source = new static($this->context->table($table), $this->context);
+            $this->relations[$table] = $source = new static($this->context->table($table), $table, $this->context);
             $source->setPrimaryKey($this->related[$table][4]);
         }
         return $this->relations[$table];
@@ -277,7 +281,7 @@ class NetteDbSource implements ISource
                 return $options[0] . '.' . $options[2];
             }
         }
-        return $columnName;
+        return $this->tableName . '.' . $columnName;
     }
 
 }

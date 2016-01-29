@@ -12,16 +12,18 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 {
 
     /** @var \Nette\Database\Connection */
-    private $connection;
+    protected $connection;
 
     /** @var \Nette\Database\Context */
-    private $context;
+    protected $context;
 
     /** @var \Nette\Database\Table\Selection */
-    private $user;
+    protected $user;
 
     /** @var \Nette\Database\Table\Selection */
-    private $empty;
+    protected $empty;
+
+    protected $tableName = 'user';
 
     public function __construct()
     {
@@ -39,63 +41,63 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
         $conventions = new Database\Conventions\DiscoveredConventions($structure);
         $this->context = new Database\Context($this->connection, $structure, $conventions, $cacheMemoryStorage);
 
-        $this->user = $this->context->table('user');
+        $this->user = $this->context->table($this->tableName);
         $this->empty = $this->context->table('empty');
     }
 
     public function testPrimaryKey()
     {
-        $source = new NetteDbSource($this->user);
+        $source = new NetteDbSource($this->user, $this->tableName);
         $this->matchPrimaryKey($source);
     }
 
     public function testTotalCount()
     {
-        $source = new NetteDbSource($this->user);
+        $source = new NetteDbSource($this->user, $this->tableName);
         $this->matchTotalCount($source);
     }
 
     public function testFetchPairs()
     {
-        $source = new NetteDbSource($this->user);
+        $source = new NetteDbSource($this->user, $this->tableName);
         $this->matchPairs($source);
     }
 
     public function testLimit()
     {
-        $source = new NetteDbSource($this->user);
+        $source = new NetteDbSource($this->user, $this->tableName);
         $this->matchLimit($source);
     }
 
     public function testOffset()
     {
-        $source = new NetteDbSource($this->user);
+        $source = new NetteDbSource($this->user, $this->tableName);
         $this->matchOffset($source);
     }
 
     public function testWhere()
     {
-        $source = new NetteDbSource($this->user);
+        $source = new NetteDbSource($this->user, $this->tableName);
         $source->where('action = ?', self::ACTIVE_STATUS);
-        $this->matchWhere($source);
+        $this->matchWhere($source, self::FULL_USER_COUNT, self::COLUMN_COUNT + 2);
     }
 
     public function testWhereDate()
     {
-        $source = new NetteDbSource($this->user);
+        $source = new NetteDbSource($this->user, $this->tableName);
         $source->where('last_login > ?', self::DATE_BIGGER);
-        $this->matchWhereDate($source);
+        $this->matchWhereDate($source, self::FULL_USER_COUNT, self::COLUMN_COUNT + 2);
     }
 
     public function testEmpty()
     {
-        $source = new NetteDbSource($this->empty);
+        $source = new NetteDbSource($this->empty, 'empty');
         $this->matchEmpty($source);
     }
 
     public function testRelated()
     {
-        $source = new NetteDbSource($this->user, $this->context);
+        $source = new NetteDbSource($this->user, $this->tableName, $this->context);
 
         Assert::same(FALSE, $source->isRelated('group'));
 
@@ -111,7 +113,7 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 
     public function testFetchLastRawRows()
     {
-        $source = new NetteDbSource($this->user, $this->context);
+        $source = new NetteDbSource($this->user, $this->tableName, $this->context);
         $source->setPrimaryKey('user_id');
 
         Assert::exception(function () use ($source) {

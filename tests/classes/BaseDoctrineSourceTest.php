@@ -30,25 +30,27 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
         'group_name' => 'gr.name',
     ];
 
-    public function __construct()
+    public function __construct($entityDir = NULL)
     {
         parent::__construct();
 
-        // settings for next required file
-        $conn = [
-            'driver' => 'pdo_mysql',
-            'user' => $this->databaseFactory->getUserName(),
-            'password' => $this->databaseFactory->getPassword(),
-            'dbname' => $this->databaseFactory->getDatabaseName(),
-        ];
-        $this->entityManager = require_once __DIR__ . '/../../demo/bootstrap.php';
+        if(!$entityDir) {
+            // settings for next required file
+            $conn = [
+                'driver' => 'pdo_mysql',
+                'user' => $this->databaseFactory->getUserName(),
+                'password' => $this->databaseFactory->getPassword(),
+                'dbname' => $this->databaseFactory->getDatabaseName(),
+            ];
+            $this->entityManager = require_once __DIR__ . '/../../demo/bootstrap.php';
 
-        $this->user = $this->entityManager->createQueryBuilder()
-            ->select('u')
-            ->from('Mesour\Sources\Tests\Entity\User', 'u');
-        $this->empty = $this->entityManager->createQueryBuilder()
-            ->select('e')
-            ->from('Mesour\Sources\Tests\Entity\emptyTable', 'e');
+            $this->user = $this->entityManager->createQueryBuilder()
+                ->select('u')
+                ->from('Mesour\Sources\Tests\Entity\User', 'u');
+            $this->empty = $this->entityManager->createQueryBuilder()
+                ->select('e')
+                ->from('Mesour\Sources\Tests\Entity\emptyTable', 'e');
+        }
     }
 
     public function testPrimaryKey()
