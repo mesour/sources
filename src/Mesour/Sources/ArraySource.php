@@ -213,9 +213,9 @@ class ArraySource implements ISource
 
     public function join($table, $key, $column, $columnAlias, $primaryKey = 'id', $left = false)
     {
-        $this->setRelated($table, $columnAlias);
+        $this->setRelated($table, $columnAlias, $primaryKey);
 
-        $related = $this->related($table, $primaryKey);
+        $related = $this->related($table);
         foreach ($this->dataArr as $_key => $item) {
             $current = clone $related;
             $item_name = is_string($columnAlias) ? $columnAlias : $column;
@@ -238,10 +238,13 @@ class ArraySource implements ISource
         return $this;
     }
 
-    public function setRelated($table, $column)
+    public function setRelated($table, $column, $primaryKey = 'id')
     {
-        $this->related[$table][] = $column;
-        $this->related[$table] = array_unique($this->related[$table]);
+        if (!isset($this->related[$table])) {
+            $this->related[$table]['primary_key'] = $primaryKey;
+        }
+        $this->related[$table]['columns'][] = $column;
+        $this->related[$table]['columns'] = array_unique($this->related[$table]['columns']);
 
         return $this;
     }
@@ -251,7 +254,7 @@ class ArraySource implements ISource
      * @return $this
      * @throws Exception
      */
-    public function related($table, $primaryKey = 'id')
+    public function related($table)
     {
         if (!$this->isRelated($table)) {
             throw new Exception('Relation ' . $table . ' does not exists.');
@@ -261,7 +264,7 @@ class ArraySource implements ISource
                 throw new Exception('Relation ' . $table . ' does not exists.');
             }
             $this->relations[$table] = $source = new static($this->relations[$table]);
-            $source->setPrimaryKey($primaryKey);
+            $source->setPrimaryKey($this->related[$table]['primary_key']);
         }
 
         return $this->relations[$table];

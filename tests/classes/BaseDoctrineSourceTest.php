@@ -31,7 +31,7 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
         'groupName' => 'g.name',
     ];
 
-    public function __construct($entityDir = NULL)
+    public function __construct($entityDir = null)
     {
         parent::__construct();
 
@@ -124,11 +124,11 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
         Assert::count(self::COLUMN_COUNT + 1, $firstRow);
         Assert::same(self::FIRST_GROUP_NAME, $firstRow['groupName']);
 
-        Assert::same(FALSE, $source->isRelated(Groups::class));
+        Assert::same(false, $source->isRelated(Groups::class));
 
         $source->setRelated(Groups::class, 'groupName');
 
-        Assert::same(TRUE, $source->isRelated(Groups::class));
+        Assert::same(true, $source->isRelated(Groups::class));
 
         $related = $source->related(Groups::class);
 
@@ -136,11 +136,14 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
 
         Assert::same([
-            Groups::class => "groupName"
+            Groups::class => [
+                'primary_key' => 'id',
+                'columns' => ['groupName'],
+            ],
         ], $source->getAllRelated());
 
         $source->where('g.name = :groupName', [
-            'groupName' => 'Group 1'
+            'groupName' => 'Group 1',
         ]);
 
         Assert::count(self::USERS_WITH_FIRST_GROUP, $source->fetchAll());

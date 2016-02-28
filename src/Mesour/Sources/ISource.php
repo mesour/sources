@@ -92,7 +92,7 @@ interface ISource
      * @param $column
      * @return static
      */
-    public function setRelated($table, $column);
+    public function setRelated($table, $column, $primaryKey = 'id');
 
     /**
      * @param $table

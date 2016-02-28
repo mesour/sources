@@ -120,7 +120,14 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
         Assert::type('Mesour\Sources\NetteDbSource', $related);
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
 
-        $source->where('grou.name = ?', 'Group 1');
+        Assert::same([
+            'group' => [
+                'primary_key' => 'id',
+                'columns' => ['group_name'],
+            ],
+        ], $source->getAllRelated());
+
+        $source->where('group.name = ?', 'Group 1');
 
         Assert::count(self::USERS_WITH_FIRST_GROUP, $source->fetchAll());
     }

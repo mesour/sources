@@ -42,7 +42,7 @@ class NetteDbSource implements ISource
     private $totalCount = 0;
 
     /** @var null|array */
-    protected $lastFetchAllResult = NULL;
+    protected $lastFetchAllResult = null;
 
     protected $columnMapping = [];
 
@@ -53,7 +53,7 @@ class NetteDbSource implements ISource
     public function __construct(
         Nette\Database\Table\Selection $selection,
         $columnMapping = [],
-        Nette\Database\Context $context = NULL
+        Nette\Database\Context $context = null
     )
     {
         $this->context = $context;
@@ -85,6 +85,7 @@ class NetteDbSource implements ISource
     public function where($args)
     {
         $this->whereArr[] = func_get_args();
+
         return $this;
     }
 
@@ -98,6 +99,7 @@ class NetteDbSource implements ISource
     {
         $this->limit = $limit;
         $this->offset = $offset;
+
         return $this;
     }
 
@@ -109,9 +111,9 @@ class NetteDbSource implements ISource
     {
         $count = $this->getSelection()->count('*');
         $toEnd = $count - ($this->offset + $this->limit);
+
         return !is_null($this->limit) && $this->limit < $count ? ($toEnd < $this->limit ? $toEnd : $this->limit) : $count;
     }
-
 
 
     /**
@@ -128,6 +130,7 @@ class NetteDbSource implements ISource
             $this->lastFetchAllResult[] = $row;
             $out[] = $this->makeArrayHash($row->toArray());
         }
+
         return $out;
     }
 
@@ -144,6 +147,7 @@ class NetteDbSource implements ISource
         if (is_null($this->lastFetchAllResult)) {
             throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
         }
+
         return $this->lastFetchAllResult;
     }
 
@@ -160,12 +164,12 @@ class NetteDbSource implements ISource
     {
         if ($this->totalCount > 0) {
             return $this->makeArrayHash(
-                $this->getSelection(FALSE, FALSE)
+                $this->getSelection(false, false)
                     ->fetch()
                     ->toArray()
             );
         } else {
-            return FALSE;
+            return false;
         }
     }
 
@@ -190,15 +194,21 @@ class NetteDbSource implements ISource
     public function setPrimaryKey($primaryKey)
     {
         $this->primaryKey = $primaryKey;
+
         return $this;
     }
 
-    public function setRelated($table, $column)
+    public function setRelated($table, $column, $primaryKey = 'id')
     {
         if (is_null($this->context)) {
             throw new Exception('Related require set Nette database context in constructor.');
         }
-        $this->related[$table] = $column;
+        if (!isset($this->related[$table])) {
+            $this->related[$table]['primary_key'] = $primaryKey;
+        }
+        $this->related[$table]['columns'][] = $column;
+        $this->related[$table]['columns'] = array_unique($this->related[$table]['columns']);
+
         return $this;
     }
 
@@ -213,9 +223,12 @@ class NetteDbSource implements ISource
             throw new Exception('Relation for table ' . $table . ' does not exists.');
         }
         if (!isset($this->relations[$table])) {
-            $this->relations[$table] = $source = new static($this->context->table($table), $table, $this->context);
-            $source->setPrimaryKey($this->related[$table][4]);
+            $this->relations[$table] = $source = new static(
+                $this->context->table($table), $this->columnMapping, $this->context
+            );
+            $source->setPrimaryKey($this->related[$table]['primary_key']);
         }
+
         return $this->relations[$table];
     }
 
@@ -236,7 +249,7 @@ class NetteDbSource implements ISource
         return $this->related;
     }
 
-    protected function prefixColumn($column, $newPrefix = NULL)
+    protected function prefixColumn($column, $newPrefix = null)
     {
         if (isset($this->columnMapping[$column])) {
             return $this->columnMapping[$column];
@@ -254,7 +267,7 @@ class NetteDbSource implements ISource
         return ArrayHash::from($val);
     }
 
-    protected function getSelection($limit = TRUE, $where = TRUE)
+    protected function getSelection($limit = true, $where = true)
     {
         $selection = clone $this->netteTable;
         if ($where) {
@@ -265,6 +278,7 @@ class NetteDbSource implements ISource
         if ($limit) {
             $selection->limit($this->limit, $this->offset);
         }
+
         return $selection;
     }
 

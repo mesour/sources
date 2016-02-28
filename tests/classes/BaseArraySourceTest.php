@@ -124,7 +124,10 @@ abstract class BaseArraySourceTest extends DataSourceTestCase
         Assert::same(count($source->fetch()), self::COLUMN_COUNT + 2);
 
         Assert::same([
-            'group' => ['group_name', 'group_type'],
+            'group' => [
+                'primary_key' => 'id',
+                'columns' => ['group_name', 'group_type'],
+            ],
         ], $source->getAllRelated());
 
         $source->where('group_name', 'Group 1', Condition::EQUAL);
