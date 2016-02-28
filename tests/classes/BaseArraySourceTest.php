@@ -36,9 +36,9 @@ abstract class BaseArraySourceTest extends DataSourceTestCase
 
     protected $relations = [
         'group' => [
-            ['id' => '2', 'name' => 'Group 2'],
-            ['id' => '1', 'name' => 'Group 1'],
-            ['id' => '3', 'name' => 'Group 3'],
+            ['id' => '2', 'name' => 'Group 2', 'type' => 'admin'],
+            ['id' => '1', 'name' => 'Group 1', 'type' => 'moderator'],
+            ['id' => '3', 'name' => 'Group 3', 'type' => 'moderator'],
         ],
     ];
 
@@ -108,15 +108,28 @@ abstract class BaseArraySourceTest extends DataSourceTestCase
 
         Assert::same(false, $source->isRelated('group'));
 
-        $source->setRelated('group', 'group_id', 'name', 'group_name');
+        $source->join('group', 'group_id', 'name', 'group_name');
+        $source->join('group', 'group_id', 'type', 'group_type');
 
         Assert::same(true, $source->isRelated('group'));
+
+        $firstRow = $source->fetch();
+        Assert::count(self::COLUMN_COUNT + 2, $firstRow);
+        Assert::same(self::FIRST_GROUP_NAME, $firstRow['group_name']);
 
         $related = $source->related('group');
 
         Assert::type('Mesour\Sources\ArraySource', $related);
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
-        Assert::same(count($source->fetch()), self::COLUMN_COUNT + 1); // + 1 because using related (group_name column)
+        Assert::same(count($source->fetch()), self::COLUMN_COUNT + 2);
+
+        Assert::same([
+            'group' => ['group_name', 'group_type'],
+        ], $source->getAllRelated());
+
+        $source->where('group_name', 'Group 1', Condition::EQUAL);
+
+        Assert::count(self::USERS_WITH_FIRST_GROUP, $source->fetchAll());
     }
 
     public function testFetchLastRawRows()

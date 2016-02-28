@@ -2,7 +2,7 @@
 /**
  * This file is part of the Mesour Sources (http://components.mesour.com/component/sources)
  *
- * Copyright (c) 2015 Matouš Němec (http://mesour.com)
+ * Copyright (c) 2015 - 2016 Matouš Němec (http://mesour.com)
  *
  * For full licence and copyright please view the file licence.md in root of this project
  */
@@ -30,7 +30,7 @@ class ArraySource implements ISource
     protected $dataArr = [];
 
     /** @var null|array */
-    protected $lastFetchAllResult = NULL;
+    protected $lastFetchAllResult = null;
 
     protected $structure = [];
 
@@ -51,6 +51,7 @@ class ArraySource implements ISource
     public function setPrimaryKey($primaryKey)
     {
         $this->primaryKey = $primaryKey;
+
         return $this;
     }
 
@@ -69,7 +70,7 @@ class ArraySource implements ISource
         return $this->getSelect()->getTotalCount();
     }
 
-    public function where($column, $value = NULL, $condition = NULL, $operator = 'and')
+    public function where($column, $value = null, $condition = null, $operator = 'and')
     {
         if (isset($this->structure[$column]) && $this->structure[$column] === 'date') {
             $value = $this->fixDate($value);
@@ -77,6 +78,7 @@ class ArraySource implements ISource
         }
 
         $this->getSelect()->where($column, $value, $condition, $operator);
+
         return $this;
     }
 
@@ -124,6 +126,7 @@ class ArraySource implements ISource
             $out[$key] = $this->makeArrayHash($val);
         }
         $this->lastFetchAllResult = $out;
+
         return $out;
     }
 
@@ -140,6 +143,7 @@ class ArraySource implements ISource
         if (is_null($this->lastFetchAllResult)) {
             throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
         }
+
         return $this->lastFetchAllResult;
     }
 
@@ -162,11 +166,12 @@ class ArraySource implements ISource
     {
         $data = $this->getSelect()->fetch();
         if (!$data) {
-            return FALSE;
+            return false;
         }
         if (count($this->structure) > 0) {
             $this->removeStructureDate($data);
         }
+
         return $this->makeArrayHash($data);
     }
 
@@ -184,6 +189,7 @@ class ArraySource implements ISource
         foreach ($data as $item) {
             $output[$item[$key]] = $item[$value];
         }
+
         return $output;
     }
 
@@ -201,26 +207,42 @@ class ArraySource implements ISource
     public function setStructure(array $structure)
     {
         $this->structure = $structure;
+
         return $this;
     }
 
-    public function setRelated($table, $column)
+    public function join($table, $key, $column, $columnAlias, $primaryKey = 'id', $left = false)
     {
-        $this->related[$table] = [$table, $key, $column, $as, $primary];
-        $related = $this->related($table);
+        $this->setRelated($table, $columnAlias);
 
+        $related = $this->related($table, $primaryKey);
         foreach ($this->dataArr as $_key => $item) {
             $current = clone $related;
+            $item_name = is_string($columnAlias) ? $columnAlias : $column;
             if (isset($item[$key])) {
                 $_item = $current->where($related->getPrimaryKey(), $item[$key], Mesour\ArrayManage\Searcher\Condition::EQUAL)->fetch();
-                $item_name = is_string($as) ? $as : $column;
-                $this->dataArr[$_key][$item_name] = $_item[$column];
-                $this->select = NULL;
+                if (isset($_item[$column])) {
+                    $this->dataArr[$_key][$item_name] = $_item[$column];
+                } else {
+                    $this->dataArr[$_key][$item_name] = null;
+                }
+                $this->select = null;
+            } elseif ($left) {
+                $this->dataArr[$_key][$item_name] = null;
             } else {
                 throw new Exception('Column ' . $key . ' does not exist in data array.');
             }
             unset($current);
         }
+
+        return $this;
+    }
+
+    public function setRelated($table, $column)
+    {
+        $this->related[$table][] = $column;
+        $this->related[$table] = array_unique($this->related[$table]);
+
         return $this;
     }
 
@@ -229,7 +251,7 @@ class ArraySource implements ISource
      * @return $this
      * @throws Exception
      */
-    public function related($table)
+    public function related($table, $primaryKey = 'id')
     {
         if (!$this->isRelated($table)) {
             throw new Exception('Relation ' . $table . ' does not exists.');
@@ -239,8 +261,9 @@ class ArraySource implements ISource
                 throw new Exception('Relation ' . $table . ' does not exists.');
             }
             $this->relations[$table] = $source = new static($this->relations[$table]);
-            $source->setPrimaryKey($this->related[$table][4]);
+            $source->setPrimaryKey($primaryKey);
         }
+
         return $this->relations[$table];
     }
 
@@ -284,6 +307,7 @@ class ArraySource implements ISource
             }
             $this->select = new Mesour\ArrayManage\Searcher\Select($this->dataArr);
         }
+
         return $this->select;
     }
 
