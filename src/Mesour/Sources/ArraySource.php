@@ -18,6 +18,8 @@ use Mesour;
 class ArraySource implements ISource
 {
 
+    const DATE = 'date';
+
     private $primaryKey = 'id';
 
     private $relations = [];
@@ -72,7 +74,7 @@ class ArraySource implements ISource
 
     public function where($column, $value = null, $condition = null, $operator = 'and')
     {
-        if (isset($this->structure[$column]) && $this->structure[$column] === 'date') {
+        if (isset($this->structure[$column]) && $this->structure[$column] === self::DATE) {
             $value = $this->fixDate($value);
             $column = '__date_' . $column;
         }
@@ -196,10 +198,8 @@ class ArraySource implements ISource
     protected function removeStructureDate(&$out)
     {
         foreach ($this->structure as $name => $type) {
-            switch ($type) {
-                case 'date':
-                    unset($out['__date_' . $name]);
-                    break;
+            if ($type === self::DATE) {
+                unset($out['__date_' . $name]);
             }
         }
     }
@@ -296,15 +296,13 @@ class ArraySource implements ISource
         if (!$this->select) {
             if (count($this->structure)) {
                 foreach ($this->structure as $name => $value) {
-                    switch ($value) {
-                        case 'date':
-                            foreach ($this->dataArr as $key => $item) {
-                                if (!array_key_exists($name, $item)) {
-                                    throw new Exception('Column ' . $name . ' does not exists in source array.');
-                                }
-                                $this->dataArr[$key]['__date_' . $name] = $this->fixDate($item[$name]);
+                    if ($value === self::DATE) {
+                        foreach ($this->dataArr as $key => $item) {
+                            if (!array_key_exists($name, $item)) {
+                                throw new Exception('Column ' . $name . ' does not exists in source array.');
                             }
-                            break;
+                            $this->dataArr[$key]['__date_' . $name] = $this->fixDate($item[$name]);
+                        }
                     }
                 }
             }
