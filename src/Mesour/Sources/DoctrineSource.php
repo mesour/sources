@@ -296,25 +296,9 @@ class DoctrineSource implements ISource
         return $out;
     }
 
-    public function setRelated($table, $key, $column, $as = NULL, $primary = 'id', $left = FALSE)
+    public function setRelated($table, $column)
     {
-        $path = explode('\\', $table);
-        $shortClassName =  array_pop($path);
-        $newPrefix = substr(strtolower($shortClassName), 0, 2);
-
-        $this->related[$table] = [
-            $table, $key, $column, $as, $primary, $left, $newPrefix
-        ];
-
-        $this->getQueryBuilder()
-            ->addSelect($this->prefixColumn($column, $newPrefix) . ' ' . (!is_null($as) ? $as : ''))
-            ->{$left ? 'leftJoin' : 'join'}(
-                $table,
-                $newPrefix,
-                Query\Expr\Join::WITH,
-                $this->prefixColumn($key) . ' = ' . $this->prefixColumn($primary, $newPrefix)
-            );
-
+        $this->related[$table] = $column;
         return $this;
     }
 

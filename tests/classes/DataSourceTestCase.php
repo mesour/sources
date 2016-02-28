@@ -13,9 +13,11 @@ abstract class DataSourceTestCase extends TestCase
         OWN_PRIMARY_KEY_DOCTRINE = 'userId',
         FULL_USER_COUNT = 20,
         COLUMN_COUNT = 11,
+        FIRST_GROUP_NAME = 'Group 1',
         ACTIVE_COUNT = 10,
         INACTIVE_STATUS = 0,
         GROUPS_COUNT = 3,
+        USERS_WITH_FIRST_GROUP = 7,
         ACTIVE_STATUS = 1,
         DATE_BIGGER = '2014-09-01 06:27:32',
         DATE_BIGGER_COUNT = 12,
@@ -27,7 +29,7 @@ abstract class DataSourceTestCase extends TestCase
 
     protected $credentials = [
         'user' => 'root',
-        'password' => '',
+        'password' => 'root',
     ];
 
     private $pairs = [

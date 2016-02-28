@@ -89,14 +89,10 @@ interface ISource
 
     /**
      * @param $table
-     * @param $key
      * @param $column
-     * @param null $as
-     * @param string $primary
-     * @param bool|FALSE $left
      * @return static
      */
-    public function setRelated($table, $key, $column, $as = NULL, $primary = 'id', $left = FALSE);
+    public function setRelated($table, $column);
 
     /**
      * @param $table

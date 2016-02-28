@@ -3,6 +3,7 @@
 namespace Mesour\Sources\Tests;
 
 
+use Doctrine\ORM\Query\Expr\Join;
 use Mesour\Sources\DoctrineSource;
 use Mesour\Sources\Exception;
 use Mesour\Sources\Tests\Entity\User;
@@ -27,14 +28,14 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
         'userId' => 'u.userId',
         'group_id' => 'u.groups',
         'last_login' => 'u.lastLogin',
-        'group_name' => 'gr.name',
+        'groupName' => 'g.name',
     ];
 
     public function __construct($entityDir = NULL)
     {
         parent::__construct();
 
-        if(!$entityDir) {
+        if (!$entityDir) {
             // settings for next required file
             $conn = [
                 'driver' => 'pdo_mysql',
@@ -112,19 +113,37 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 
     public function testRelated()
     {
-        $source = new DoctrineSource($this->user, $this->columnMapping);
+        $queryBuilder = clone $this->user;
+        $queryBuilder->addSelect('g.name groupName')
+            ->join(Groups::class, 'g', Join::WITH, 'u.groupId = g.id');
+
+        $source = new DoctrineSource($queryBuilder, $this->columnMapping);
         $source->setPrimaryKey($this->primaryKey);
+
+        $firstRow = $source->fetch();
+        Assert::count(self::COLUMN_COUNT + 1, $firstRow);
+        Assert::same(self::FIRST_GROUP_NAME, $firstRow['groupName']);
 
         Assert::same(FALSE, $source->isRelated(Groups::class));
 
-        $source->setRelated(Groups::class, 'group_id', 'name', 'group_name');
+        $source->setRelated(Groups::class, 'groupName');
 
         Assert::same(TRUE, $source->isRelated(Groups::class));
 
         $related = $source->related(Groups::class);
 
-        Assert::type('Mesour\Sources\DoctrineSource', $related);
+        Assert::type(DoctrineSource::class, $related);
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
+
+        Assert::same([
+            Groups::class => "groupName"
+        ], $source->getAllRelated());
+
+        $source->where('g.name = :groupName', [
+            'groupName' => 'Group 1'
+        ]);
+
+        Assert::count(self::USERS_WITH_FIRST_GROUP, $source->fetchAll());
     }
 
     public function testFetchLastRawRows()
