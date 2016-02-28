@@ -29,9 +29,9 @@ abstract class DataSourceTestCase extends TestCase
         LIMIT = 5,
         OFFSET = 2;
 
-    protected $credentials = [
+    static public $credentials = [
         'user' => 'root',
-        'password' => 'root',
+        'password' => '',
     ];
 
     private $pairs = [
@@ -65,8 +65,8 @@ abstract class DataSourceTestCase extends TestCase
     public function __construct()
     {
         $this->databaseFactory = new DatabaseFactory(
-            '127.0.0.1', $this->credentials['user'],
-            $this->credentials['password'], 'mesour_sources_'
+            '127.0.0.1', self::$credentials['user'],
+            self::$credentials['password'], 'mesour_sources_'
         );
         $this->baseConnection = $this->databaseFactory->create();
     }
