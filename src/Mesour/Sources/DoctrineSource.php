@@ -305,7 +305,7 @@ class DoctrineSource implements ISource
         return $out;
     }
 
-    public function setRelated($table, $column, $primaryKey = 'id')
+    public function addReference($table, $column, $primaryKey = 'id')
     {
         if (!isset($this->related[$table])) {
             $this->related[$table]['primary_key'] = $primaryKey;
@@ -316,9 +316,9 @@ class DoctrineSource implements ISource
         return $this;
     }
 
-    public function related($table, $tablePrefix = 'abc')
+    public function getReferencedSource($table, $tablePrefix = 'abc')
     {
-        if (!$this->isRelated($table)) {
+        if (!$this->hasReference($table)) {
             throw new Exception('Relation ' . $table . ' does not exists.');
         }
         if (!isset($this->relations[$table])) {
@@ -333,12 +333,12 @@ class DoctrineSource implements ISource
         return $this->relations[$table];
     }
 
-    public function isRelated($table)
+    public function hasReference($table)
     {
         return isset($this->related[$table]);
     }
 
-    public function getAllRelated()
+    public function getReferenceSettings()
     {
         return $this->related;
     }

@@ -198,7 +198,7 @@ class NetteDbSource implements ISource
         return $this;
     }
 
-    public function setRelated($table, $column, $primaryKey = 'id')
+    public function addReference($table, $column, $primaryKey = 'id')
     {
         if (is_null($this->context)) {
             throw new Exception('Related require set Nette database context in constructor.');
@@ -217,9 +217,9 @@ class NetteDbSource implements ISource
      * @return static
      * @throws Exception
      */
-    public function related($table)
+    public function getReferencedSource($table)
     {
-        if (!$this->isRelated($table)) {
+        if (!$this->hasReference($table)) {
             throw new Exception('Relation for table ' . $table . ' does not exists.');
         }
         if (!isset($this->relations[$table])) {
@@ -236,7 +236,7 @@ class NetteDbSource implements ISource
      * @param $table
      * @return bool
      */
-    public function isRelated($table)
+    public function hasReference($table)
     {
         return isset($this->related[$table]);
     }
@@ -244,7 +244,7 @@ class NetteDbSource implements ISource
     /**
      * @return array
      */
-    public function getAllRelated()
+    public function getReferenceSettings()
     {
         return $this->related;
     }

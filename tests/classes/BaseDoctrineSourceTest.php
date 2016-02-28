@@ -29,6 +29,7 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
         'group_id' => 'u.groups',
         'last_login' => 'u.lastLogin',
         'groupName' => 'g.name',
+        'groupType' => 'g.type',
     ];
 
     public function __construct($entityDir = null)
@@ -111,36 +112,39 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
         $this->matchEmpty($source);
     }
 
-    public function testRelated()
+    public function testReference()
     {
         $queryBuilder = clone $this->user;
         $queryBuilder->addSelect('g.name groupName')
+            ->addSelect('g.type groupType')
             ->join(Groups::class, 'g', Join::WITH, 'u.groupId = g.id');
 
         $source = new DoctrineSource($queryBuilder, $this->columnMapping);
         $source->setPrimaryKey($this->primaryKey);
 
         $firstRow = $source->fetch();
-        Assert::count(self::COLUMN_COUNT + 1, $firstRow);
+        Assert::count(self::COLUMN_RELATION_COUNT, $firstRow);
         Assert::same(self::FIRST_GROUP_NAME, $firstRow['groupName']);
 
-        Assert::same(false, $source->isRelated(Groups::class));
+        Assert::same(false, $source->hasReference(Groups::class));
 
-        $source->setRelated(Groups::class, 'groupName');
+        $source->addReference(Groups::class, 'groupName');
+        $source->addReference(Groups::class, 'groupType');
 
-        Assert::same(true, $source->isRelated(Groups::class));
+        Assert::same(true, $source->hasReference(Groups::class));
 
-        $related = $source->related(Groups::class);
+        $related = $source->getReferencedSource(Groups::class);
 
         Assert::type(DoctrineSource::class, $related);
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
+        Assert::same(count($source->fetch()), self::COLUMN_RELATION_COUNT);
 
         Assert::same([
             Groups::class => [
                 'primary_key' => 'id',
-                'columns' => ['groupName'],
+                'columns' => ['groupName', 'groupType'],
             ],
-        ], $source->getAllRelated());
+        ], $source->getReferenceSettings());
 
         $source->where('g.name = :groupName', [
             'groupName' => 'Group 1',

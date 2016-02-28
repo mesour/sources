@@ -8,11 +8,13 @@ use \Tester\TestCase;
 
 abstract class DataSourceTestCase extends TestCase
 {
+
     CONST DEFAULT_PRIMARY_KEY = 'id',
         OWN_PRIMARY_KEY = 'user_id',
         OWN_PRIMARY_KEY_DOCTRINE = 'userId',
         FULL_USER_COUNT = 20,
         COLUMN_COUNT = 11,
+        COLUMN_RELATION_COUNT = 13,
         FIRST_GROUP_NAME = 'Group 1',
         ACTIVE_COUNT = 10,
         INACTIVE_STATUS = 0,
@@ -29,7 +31,7 @@ abstract class DataSourceTestCase extends TestCase
 
     protected $credentials = [
         'user' => 'root',
-        'password' => '',
+        'password' => 'root',
     ];
 
     private $pairs = [

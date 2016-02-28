@@ -72,8 +72,8 @@ interface ISource
     public function fetch();
 
     /**
-     * @param string $key
-     * @param string $value
+     * @param $key
+     * @param $value
      * @return array
      */
     public function fetchPairs($key, $value);
@@ -81,8 +81,8 @@ interface ISource
     /**
      * Selects columns to order by.
      *
-     * @param String $row
-     * @param String $sorting sorting direction
+     * @param $row
+     * @param string $sorting sorting direction
      * @return void
      */
     public function orderBy($row, $sorting = 'ASC');
@@ -90,25 +90,27 @@ interface ISource
     /**
      * @param $table
      * @param $column
-     * @return static
+     * @param $primaryKey
+     * @return $this
+     * @throws Exception
      */
-    public function setRelated($table, $column, $primaryKey = 'id');
+    public function addReference($table, $column, $primaryKey = 'id');
 
     /**
      * @param $table
      * @return static
      */
-    public function related($table);
+    public function getReferencedSource($table);
 
     /**
      * @param $table
      * @return bool
      */
-    public function isRelated($table);
+    public function hasReference($table);
 
     /**
      * @return array
      */
-    public function getAllRelated();
+    public function getReferenceSettings();
 
 }

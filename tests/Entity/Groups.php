@@ -28,6 +28,13 @@ class Groups
      */
     private $name;
 
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="type", type="string", length=32, nullable=false)
+     */
+    private $type;
+
 
     /**
      * Get id
@@ -61,6 +68,30 @@ class Groups
     public function getName()
     {
         return $this->name;
+    }
+
+    /**
+     * Set type
+     *
+     * @param string $name
+     *
+     * @return Groups
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    /**
+     * Get type
+     *
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 }
 

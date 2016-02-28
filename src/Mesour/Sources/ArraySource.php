@@ -20,6 +20,8 @@ class ArraySource implements ISource
 
     const DATE = 'date';
 
+    const _DATE_MARK = '__date_';
+
     private $primaryKey = 'id';
 
     private $relations = [];
@@ -76,7 +78,7 @@ class ArraySource implements ISource
     {
         if (isset($this->structure[$column]) && $this->structure[$column] === self::DATE) {
             $value = $this->fixDate($value);
-            $column = '__date_' . $column;
+            $column = self::_DATE_MARK . $column;
         }
 
         $this->getSelect()->where($column, $value, $condition, $operator);
@@ -149,11 +151,6 @@ class ArraySource implements ISource
         return $this->lastFetchAllResult;
     }
 
-    protected function makeArrayHash(array $val)
-    {
-        return ArrayHash::from($val);
-    }
-
     public function orderBy($row, $sorting = 'ASC')
     {
         $this->getSelect()->orderBy($row, $sorting);
@@ -195,15 +192,6 @@ class ArraySource implements ISource
         return $output;
     }
 
-    protected function removeStructureDate(&$out)
-    {
-        foreach ($this->structure as $name => $type) {
-            if ($type === self::DATE) {
-                unset($out['__date_' . $name]);
-            }
-        }
-    }
-
     public function setStructure(array $structure)
     {
         $this->structure = $structure;
@@ -213,9 +201,9 @@ class ArraySource implements ISource
 
     public function join($table, $key, $column, $columnAlias, $primaryKey = 'id', $left = false)
     {
-        $this->setRelated($table, $columnAlias, $primaryKey);
+        $this->addReference($table, $columnAlias, $primaryKey);
 
-        $related = $this->related($table);
+        $related = $this->getReferencedSource($table);
         foreach ($this->dataArr as $_key => $item) {
             $current = clone $related;
             $item_name = is_string($columnAlias) ? $columnAlias : $column;
@@ -238,7 +226,7 @@ class ArraySource implements ISource
         return $this;
     }
 
-    public function setRelated($table, $column, $primaryKey = 'id')
+    public function addReference($table, $column, $primaryKey = 'id')
     {
         if (!isset($this->related[$table])) {
             $this->related[$table]['primary_key'] = $primaryKey;
@@ -254,9 +242,9 @@ class ArraySource implements ISource
      * @return $this
      * @throws Exception
      */
-    public function related($table)
+    public function getReferencedSource($table)
     {
-        if (!$this->isRelated($table)) {
+        if (!$this->hasReference($table)) {
             throw new Exception('Relation ' . $table . ' does not exists.');
         }
         if (!isset($this->relations[$table]) || !$this->relations[$table] instanceof ISource) {
@@ -274,7 +262,7 @@ class ArraySource implements ISource
      * @param $table
      * @return bool
      */
-    public function isRelated($table)
+    public function hasReference($table)
     {
         return isset($this->related[$table]);
     }
@@ -282,7 +270,7 @@ class ArraySource implements ISource
     /**
      * @return array
      */
-    public function getAllRelated()
+    public function getReferenceSettings()
     {
         return $this->related;
     }
@@ -301,7 +289,7 @@ class ArraySource implements ISource
                             if (!array_key_exists($name, $item)) {
                                 throw new Exception('Column ' . $name . ' does not exists in source array.');
                             }
-                            $this->dataArr[$key]['__date_' . $name] = $this->fixDate($item[$name]);
+                            $this->dataArr[$key][self::_DATE_MARK . $name] = $this->fixDate($item[$name]);
                         }
                     }
                 }
@@ -310,6 +298,20 @@ class ArraySource implements ISource
         }
 
         return $this->select;
+    }
+
+    protected function removeStructureDate(&$out)
+    {
+        foreach ($this->structure as $name => $type) {
+            if ($type === self::DATE) {
+                unset($out[self::_DATE_MARK . $name]);
+            }
+        }
+    }
+
+    protected function makeArrayHash(array $val)
+    {
+        return ArrayHash::from($val);
     }
 
 }
