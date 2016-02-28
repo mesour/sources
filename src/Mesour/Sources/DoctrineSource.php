@@ -2,7 +2,7 @@
 /**
  * This file is part of the Mesour Sources (http://components.mesour.com/component/sources)
  *
- * Copyright (c) 2015 Martin Procházka <juniwalk@outlook.cz>, Matouš Němec (http://mesour.com)
+ * Copyright (c) 2015 - 2016 Martin Procházka <juniwalk@outlook.cz>, Matouš Němec (http://mesour.com)
  *
  * For full licence and copyright please view the file licence.md in root of this project
  */
@@ -45,7 +45,7 @@ class DoctrineSource implements ISource
      */
     protected $primaryKey = 'id';
 
-    protected $limit = NULL;
+    protected $limit = null;
 
     protected $offset = 0;
 
@@ -56,12 +56,12 @@ class DoctrineSource implements ISource
     private $whereArr = [];
 
     /** @var null|array */
-    protected $lastFetchAllResult = NULL;
+    protected $lastFetchAllResult = null;
 
     /**
      * Initialize Doctrine data source with QueryBuilder instance.
      * @param QueryBuilder $queryBuilder Source of data
-     * @param array $columnMapping       Column name mapper
+     * @param array $columnMapping Column name mapper
      */
     public function __construct(QueryBuilder $queryBuilder, array $columnMapping = [])
     {
@@ -84,7 +84,7 @@ class DoctrineSource implements ISource
      * @param bool|FALSE $resetLimit
      * @return QueryBuilder
      */
-    public function cloneQueryBuilder($resetWhere = FALSE, $resetLimit = FALSE)
+    public function cloneQueryBuilder($resetWhere = false, $resetLimit = false)
     {
         $queryBuilder = clone $this->getQueryBuilder();
         if (!$resetWhere) {
@@ -104,6 +104,7 @@ class DoctrineSource implements ISource
                 $queryBuilder->setFirstResult($this->offset);
             }
         }
+
         return $queryBuilder;
     }
 
@@ -136,18 +137,19 @@ class DoctrineSource implements ISource
         }
 
         // Remove WHERE condition from QueryBuilder
-        $query = $this->cloneQueryBuilder(TRUE, TRUE)
+        $query = $this->cloneQueryBuilder(true, true)
             ->getQuery();
 
         // Get total count without WHERE and LIMIT applied
         $this->itemsTotalCount = (new Paginator($query))->count();
+
         return $this->itemsTotalCount;
     }
 
 
     /**
      * Apply limit and offset.
-     * @param  int $limit  Number of rows
+     * @param  int $limit Number of rows
      * @param  int $offset Rows to skip
      * @return static
      */
@@ -155,6 +157,7 @@ class DoctrineSource implements ISource
     {
         $this->limit = $limit;
         $this->offset = $offset;
+
         return $this;
     }
 
@@ -166,22 +169,24 @@ class DoctrineSource implements ISource
      * @param bool|FALSE $or
      * @return $this
      */
-    public function where($args, array $parameters = [], $or = FALSE)
+    public function where($args, array $parameters = [], $or = false)
     {
         $this->whereArr[] = func_get_args();
+
         return $this;
     }
 
 
     /**
      * Add ORDER BY directive to the criteria.
-     * @param  string $column  Column name
+     * @param  string $column Column name
      * @param  string $sorting Sorting direction
      * @return static
      */
     public function orderBy($column, $sorting = 'ASC')
     {
         $this->getQueryBuilder()->addOrderBy($this->prefixColumn($column), $sorting);
+
         return $this;
     }
 
@@ -212,6 +217,7 @@ class DoctrineSource implements ISource
                 }
             }
         }
+
         return (new Paginator($this->getQuery()))->count();
     }
 
@@ -223,9 +229,9 @@ class DoctrineSource implements ISource
     {
         try {
             return $this->fixResult($this->cloneQueryBuilder()->setMaxResults(1)
-                ->getQuery()->getSingleResult(Query::HYDRATE_ARRAY), TRUE);
+                ->getQuery()->getSingleResult(Query::HYDRATE_ARRAY), true);
         } catch (NoResultException $e) {
-            return FALSE;
+            return false;
         }
     }
 
@@ -259,6 +265,7 @@ class DoctrineSource implements ISource
         if (is_null($this->lastFetchAllResult)) {
             throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
         }
+
         return $this->lastFetchAllResult;
     }
 
@@ -279,6 +286,7 @@ class DoctrineSource implements ISource
     public function setPrimaryKey($column)
     {
         $this->primaryKey = $column;
+
         return $this;
     }
 
@@ -293,27 +301,17 @@ class DoctrineSource implements ISource
         foreach ($results as $val) {
             $out[reset($val)] = end($val);
         }
+
         return $out;
     }
 
-    public function setRelated($table, $key, $column, $as = NULL, $primary = 'id', $left = FALSE)
+    public function setRelated($table, $column, $primaryKey = 'id')
     {
-        $path = explode('\\', $table);
-        $shortClassName =  array_pop($path);
-        $newPrefix = substr(strtolower($shortClassName), 0, 2);
-
-        $this->related[$table] = [
-            $table, $key, $column, $as, $primary, $left, $newPrefix
-        ];
-
-        $this->getQueryBuilder()
-            ->addSelect($this->prefixColumn($column, $newPrefix) . ' ' . (!is_null($as) ? $as : ''))
-            ->{$left ? 'leftJoin' : 'join'}(
-                $table,
-                $newPrefix,
-                Query\Expr\Join::WITH,
-                $this->prefixColumn($key) . ' = ' . $this->prefixColumn($primary, $newPrefix)
-            );
+        if (!isset($this->related[$table])) {
+            $this->related[$table]['primary_key'] = $primaryKey;
+        }
+        $this->related[$table]['columns'][] = $column;
+        $this->related[$table]['columns'] = array_unique($this->related[$table]['columns']);
 
         return $this;
     }
@@ -328,9 +326,10 @@ class DoctrineSource implements ISource
                 $this->getQueryBuilder()->getEntityManager()
                     ->createQueryBuilder()->select($tablePrefix)
                     ->from($table, $tablePrefix), $this->columnMapping);
-            $source->setPrimaryKey($this->related[$table][4]);
+            $source->setPrimaryKey($this->related[$table]['primary_key']);
             $this->relations[$table] = $source;
         }
+
         return $this->relations[$table];
     }
 
@@ -373,10 +372,11 @@ class DoctrineSource implements ISource
 
             $out[] = $item;
         }
+
         return $out;
     }
 
-    protected function fixResult(array $val, $fetch = FALSE)
+    protected function fixResult(array $val, $fetch = false)
     {
         if (count($val) > 0) {
             $hasSubArray = is_array(reset($val));
@@ -409,8 +409,10 @@ class DoctrineSource implements ISource
                     return reset($out);
                 }
             }
+
             return $out;
         }
+
         return $val;
     }
 
@@ -418,27 +420,14 @@ class DoctrineSource implements ISource
     {
         return ArrayHash::from($data);
     }
-    /*
-        protected function getRealColumnName($column)
-        {
-            foreach ($this->columnMapping as $key => $item) {
-                $parts = explode('.', $item);
-                $name = end($parts);
 
-                if ($column === $item || $column === $name) {
-                    return $key;
-                }
-            }
-            return $column;
-        }
-    */
     /**
      * Add prefix to the column name.
      * @param  string $column Column name
      * @param string|null $newPrefix
      * @return string
      */
-    protected function prefixColumn($column, $newPrefix = NULL)
+    protected function prefixColumn($column, $newPrefix = null)
     {
         if (isset($this->columnMapping[$column])) {
             return $this->columnMapping[$column];

@@ -79,14 +79,14 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
     {
         $source = new NetteDbSource($this->user, $this->tableName);
         $source->where('action = ?', self::ACTIVE_STATUS);
-        $this->matchWhere($source, self::FULL_USER_COUNT, self::COLUMN_COUNT + 2);
+        $this->matchWhere($source, self::FULL_USER_COUNT, self::COLUMN_COUNT);
     }
 
     public function testWhereDate()
     {
         $source = new NetteDbSource($this->user, $this->tableName);
         $source->where('last_login > ?', self::DATE_BIGGER);
-        $this->matchWhereDate($source, self::FULL_USER_COUNT, self::COLUMN_COUNT + 2);
+        $this->matchWhereDate($source, self::FULL_USER_COUNT, self::COLUMN_COUNT);
     }
 
     public function testEmpty()
@@ -97,11 +97,21 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 
     public function testRelated()
     {
-        $source = new NetteDbSource($this->user, $this->tableName, $this->context);
+        $selection = clone $this->user;
+        $selection->select('user.*')
+            ->select('group.name group_name');
+
+        $source = new NetteDbSource($selection, [
+            'group_name' => 'group.name'
+        ], $this->context);
 
         Assert::same(FALSE, $source->isRelated('group'));
 
-        $source->setRelated('group', 'group_id', 'name', 'group_name');
+        $source->setRelated('group', 'group_name');
+
+        $firstRow = $source->fetch();
+        Assert::count(self::COLUMN_COUNT + 1, $firstRow);
+        Assert::same(self::FIRST_GROUP_NAME, $firstRow['group_name']);
 
         Assert::same(TRUE, $source->isRelated('group'));
 
@@ -109,6 +119,17 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 
         Assert::type('Mesour\Sources\NetteDbSource', $related);
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
+
+        Assert::same([
+            'group' => [
+                'primary_key' => 'id',
+                'columns' => ['group_name'],
+            ],
+        ], $source->getAllRelated());
+
+        $source->where('group.name = ?', 'Group 1');
+
+        Assert::count(self::USERS_WITH_FIRST_GROUP, $source->fetchAll());
     }
 
     public function testFetchLastRawRows()

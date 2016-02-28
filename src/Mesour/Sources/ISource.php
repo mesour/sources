@@ -2,7 +2,7 @@
 /**
  * This file is part of the Mesour Sources (http://components.mesour.com/component/sources)
  *
- * Copyright (c) 2015 Matouš Němec (http://mesour.com)
+ * Copyright (c) 2015 - 2016 Matouš Němec (http://mesour.com)
  *
  * For full licence and copyright please view the file licence.md in root of this project
  */
@@ -89,14 +89,10 @@ interface ISource
 
     /**
      * @param $table
-     * @param $key
      * @param $column
-     * @param null $as
-     * @param string $primary
-     * @param bool|FALSE $left
      * @return static
      */
-    public function setRelated($table, $key, $column, $as = NULL, $primary = 'id', $left = FALSE);
+    public function setRelated($table, $column, $primaryKey = 'id');
 
     /**
      * @param $table
