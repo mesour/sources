@@ -3,6 +3,7 @@
 namespace Mesour\Sources\Tests;
 
 use Mesour\Sources\Exception;
+use Mesour\Sources\InvalidStateException;
 use Mesour\Sources\NetteDbSource;
 use Nette\Caching\Storages\MemoryStorage;
 use Tester\Assert;
@@ -24,6 +25,11 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
     protected $empty;
 
     protected $tableName = 'user';
+
+    protected $columnMapping = [
+        'group_name' => 'group.name',
+        'group_type' => 'group.type',
+    ];
 
     public function __construct()
     {
@@ -99,33 +105,34 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
     {
         $selection = clone $this->user;
         $selection->select('user.*')
-            ->select('group.name group_name');
+            ->select('group.name group_name')
+            ->select('group.type group_type');
 
-        $source = new NetteDbSource($selection, [
-            'group_name' => 'group.name'
-        ], $this->context);
+        $source = new NetteDbSource($selection, $this->columnMapping, $this->context);
 
-        Assert::same(FALSE, $source->isRelated('group'));
+        Assert::same(false, $source->hasReference('group'));
 
-        $source->setRelated('group', 'group_name');
+        $source->setReference('group_name', 'group', 'name');
+        $source->setReference('group_type', 'group', 'type');
 
         $firstRow = $source->fetch();
-        Assert::count(self::COLUMN_COUNT + 1, $firstRow);
+        Assert::count(self::COLUMN_RELATION_COUNT, $firstRow);
         Assert::same(self::FIRST_GROUP_NAME, $firstRow['group_name']);
 
-        Assert::same(TRUE, $source->isRelated('group'));
+        Assert::same(true, $source->hasReference('group'));
 
-        $related = $source->related('group');
+        $related = $source->getReferencedSource('group');
 
         Assert::type('Mesour\Sources\NetteDbSource', $related);
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
+        Assert::same(count($source->fetch()), self::COLUMN_RELATION_COUNT);
 
         Assert::same([
-            'group' => [
-                'primary_key' => 'id',
-                'columns' => ['group_name'],
-            ],
-        ], $source->getAllRelated());
+            'group_name' => ['table' => 'group', 'column' => 'name', 'primary' => 'id'],
+            'group_type' => ['table' => 'group', 'column' => 'type', 'primary' => 'id'],
+        ], $source->getReferenceSettings());
+
+        Assert::same(['group' => 'id'], $source->getReferencedTables());
 
         $source->where('group.name = ?', 'Group 1');
 
@@ -139,7 +146,7 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 
         Assert::exception(function () use ($source) {
             $source->fetchLastRawRows();
-        }, Exception::class);
+        }, InvalidStateException::class);
 
         $source->fetchAll();
 

@@ -17,26 +17,28 @@ CREATE TABLE `empty` (
 DROP TABLE IF EXISTS `group`;
 CREATE TABLE `group` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(32) COLLATE utf8_estonian_ci NOT NULL,
+  `name` varchar(32) COLLATE utf8_general_ci NOT NULL,
+  `type` varchar(32) COLLATE utf8_general_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
-INSERT INTO `group` (`id`, `name`) VALUES
-(1,	'Group 1'),
-(2,	'Group 2'),
-(3,	'Group 3');
+INSERT INTO `group` (`id`, `name`, `type`) VALUES
+(1,	'Group 1', 'admin'),
+(2,	'Group 2', 'moderator'),
+(3,	'Group 3', 'moderator');
 
 DROP TABLE IF EXISTS `groups`;
 CREATE TABLE `groups` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(32) COLLATE utf8_estonian_ci NOT NULL,
+  `name` varchar(32) COLLATE utf8_general_ci NOT NULL,
+  `type` varchar(32) COLLATE utf8_general_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
-INSERT INTO `groups` (`id`, `name`) VALUES
-(1,	'Group 1'),
-(2,	'Group 2'),
-(3,	'Group 3');
+INSERT INTO `groups` (`id`, `name`, `type`) VALUES
+(1,	'Group 1', 'admin'),
+(2,	'Group 2', 'moderator'),
+(3,	'Group 3', 'moderator');
 
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (

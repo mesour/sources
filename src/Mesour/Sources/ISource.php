@@ -10,19 +10,26 @@
 namespace Mesour\Sources;
 
 
-
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
  */
 interface ISource
 {
 
+    /**
+     * @param $primary_key
+     * @return static
+     */
     public function setPrimaryKey($primary_key);
 
+    /**
+     * @return string
+     */
     public function getPrimaryKey();
 
     /**
      * Get total count without apply where and limit
+     * @return int
      */
     public function getTotalCount();
 
@@ -30,6 +37,7 @@ interface ISource
      * Add where condition
      *
      * @param mixed $args
+     * @return static
      */
     public function where($args);
 
@@ -38,6 +46,7 @@ interface ISource
      *
      * @param int $limit
      * @param int $offset
+     * @return static
      */
     public function applyLimit($limit, $offset = 0);
 
@@ -72,8 +81,8 @@ interface ISource
     public function fetch();
 
     /**
-     * @param string $key
-     * @param string $value
+     * @param $key
+     * @param $value
      * @return array
      */
     public function fetchPairs($key, $value);
@@ -81,34 +90,48 @@ interface ISource
     /**
      * Selects columns to order by.
      *
-     * @param String $row
-     * @param String $sorting sorting direction
-     * @return void
+     * @param $row
+     * @param string $sorting sorting direction
+     * @return static
      */
     public function orderBy($row, $sorting = 'ASC');
 
     /**
+     * @param $columnAlias
      * @param $table
      * @param $column
+     * @param $primaryKey
      * @return static
+     * @throws Exception
      */
-    public function setRelated($table, $column, $primaryKey = 'id');
+    public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id');
 
     /**
      * @param $table
-     * @return static
+     * @return string
      */
-    public function related($table);
+    public function getReference($columnAlias);
 
     /**
      * @param $table
      * @return bool
      */
-    public function isRelated($table);
+    public function hasReference($table);
+
+    /**
+     * @param $table
+     * @return static
+     */
+    public function getReferencedSource($table);
 
     /**
      * @return array
      */
-    public function getAllRelated();
+    public function getReferencedTables();
+
+    /**
+     * @return array
+     */
+    public function getReferenceSettings();
 
 }

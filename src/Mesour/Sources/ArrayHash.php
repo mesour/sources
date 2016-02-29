@@ -17,12 +17,12 @@ class ArrayHash extends \stdClass implements \ArrayAccess, \Countable, \Iterator
      * @param  bool $recursive
      * @return self
      */
-    public static function from($arr, $recursive = TRUE)
+    public static function from($arr, $recursive = true)
     {
         $obj = new static;
         foreach ($arr as $key => $value) {
             if ($recursive && is_array($value)) {
-                $obj->$key = static::from($value, TRUE);
+                $obj->$key = static::from($value, true);
             } else {
                 $obj->$key = $value;
             }

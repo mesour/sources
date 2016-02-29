@@ -5,6 +5,7 @@ namespace Mesour\Sources\Tests;
 use Mesour\ArrayManage\Searcher\Condition;
 use Mesour\Sources\ArraySource;
 use Mesour\Sources\Exception;
+use Mesour\Sources\InvalidStateException;
 use Tester\Assert;
 use Mesour\Sources\ArrayHash;
 
@@ -106,29 +107,29 @@ abstract class BaseArraySourceTest extends DataSourceTestCase
     {
         $source = new ArraySource(self::$user, $this->relations);
 
-        Assert::same(false, $source->isRelated('group'));
+        Assert::same(false, $source->hasReference('group'));
 
         $source->join('group', 'group_id', 'name', 'group_name');
         $source->join('group', 'group_id', 'type', 'group_type');
 
-        Assert::same(true, $source->isRelated('group'));
+        Assert::same(true, $source->hasReference('group'));
 
         $firstRow = $source->fetch();
-        Assert::count(self::COLUMN_COUNT + 2, $firstRow);
+        Assert::count(self::COLUMN_RELATION_COUNT, $firstRow);
         Assert::same(self::FIRST_GROUP_NAME, $firstRow['group_name']);
 
-        $related = $source->related('group');
+        $related = $source->getReferencedSource('group');
 
         Assert::type('Mesour\Sources\ArraySource', $related);
         Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
-        Assert::same(count($source->fetch()), self::COLUMN_COUNT + 2);
+        Assert::same(count($source->fetch()), self::COLUMN_RELATION_COUNT);
 
         Assert::same([
-            'group' => [
-                'primary_key' => 'id',
-                'columns' => ['group_name', 'group_type'],
-            ],
-        ], $source->getAllRelated());
+            'group_name' => ['table' => 'group', 'column' => 'name', 'primary' => 'id'],
+            'group_type' => ['table' => 'group', 'column' => 'type', 'primary' => 'id'],
+        ], $source->getReferenceSettings());
+
+        Assert::same(['group' => 'id'], $source->getReferencedTables());
 
         $source->where('group_name', 'Group 1', Condition::EQUAL);
 
@@ -142,7 +143,7 @@ abstract class BaseArraySourceTest extends DataSourceTestCase
 
         Assert::exception(function () use ($source) {
             $source->fetchLastRawRows();
-        }, Exception::class);
+        }, InvalidStateException::class);
 
         $source->fetchAll();
 

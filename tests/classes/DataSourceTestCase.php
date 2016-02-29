@@ -8,11 +8,13 @@ use \Tester\TestCase;
 
 abstract class DataSourceTestCase extends TestCase
 {
+
     CONST DEFAULT_PRIMARY_KEY = 'id',
         OWN_PRIMARY_KEY = 'user_id',
         OWN_PRIMARY_KEY_DOCTRINE = 'userId',
         FULL_USER_COUNT = 20,
         COLUMN_COUNT = 11,
+        COLUMN_RELATION_COUNT = 13,
         FIRST_GROUP_NAME = 'Group 1',
         ACTIVE_COUNT = 10,
         INACTIVE_STATUS = 0,
@@ -27,7 +29,7 @@ abstract class DataSourceTestCase extends TestCase
         LIMIT = 5,
         OFFSET = 2;
 
-    protected $credentials = [
+    static public $credentials = [
         'user' => 'root',
         'password' => '',
     ];
@@ -63,8 +65,8 @@ abstract class DataSourceTestCase extends TestCase
     public function __construct()
     {
         $this->databaseFactory = new DatabaseFactory(
-            '127.0.0.1', $this->credentials['user'],
-            $this->credentials['password'], 'mesour_sources_'
+            '127.0.0.1', self::$credentials['user'],
+            self::$credentials['password'], 'mesour_sources_'
         );
         $this->baseConnection = $this->databaseFactory->create();
     }
@@ -122,16 +124,16 @@ abstract class DataSourceTestCase extends TestCase
 
     protected function matchEmpty(ISource $source)
     {
-        $this->assertCounts($source, 0, 0, 0, TRUE);
+        $this->assertCounts($source, 0, 0, 0, true);
     }
 
-    private function assertCounts(ISource $source, $active_count, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT, $fetch = FALSE)
+    private function assertCounts(ISource $source, $active_count, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT, $fetch = false)
     {
         $itemData = $source->fetch();
         if (!$fetch) {
             Assert::count($columns, $itemData);
         } else {
-            Assert::same(FALSE, $itemData);
+            Assert::same(false, $itemData);
         }
         Assert::count($active_count, $source->fetchAll());
         Assert::same($full, $source->getTotalCount());
@@ -144,6 +146,7 @@ abstract class DataSourceTestCase extends TestCase
         Assert::count(self::LIMIT, $all);
         Assert::same(self::FULL_USER_COUNT, $source->getTotalCount());
         Assert::same(self::LIMIT, $source->count());
+
         return $all;
     }
 }

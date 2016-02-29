@@ -21,3 +21,7 @@ class MissingRequiredException extends Exception
 class InvalidArgumentException extends \InvalidArgumentException
 {
 }
+
+class InvalidStateException extends \LogicException
+{
+}
