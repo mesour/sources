@@ -3,6 +3,7 @@
 namespace Mesour\Sources\Tests;
 
 use Mesour\Sources\Exception;
+use Mesour\Sources\InvalidStateException;
 use Mesour\Sources\NetteDbSource;
 use Nette\Caching\Storages\MemoryStorage;
 use Tester\Assert;
@@ -111,8 +112,8 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 
         Assert::same(false, $source->hasReference('group'));
 
-        $source->addReference('group', 'group_name');
-        $source->addReference('group', 'group_type');
+        $source->setReference('group_name', 'group', 'name');
+        $source->setReference('group_type', 'group', 'type');
 
         $firstRow = $source->fetch();
         Assert::count(self::COLUMN_RELATION_COUNT, $firstRow);
@@ -127,11 +128,11 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
         Assert::same(count($source->fetch()), self::COLUMN_RELATION_COUNT);
 
         Assert::same([
-            'group' => [
-                'primary_key' => 'id',
-                'columns' => ['group_name', 'group_type'],
-            ],
+            'group_name' => ['table' => 'group', 'column' => 'name', 'primary' => 'id'],
+            'group_type' => ['table' => 'group', 'column' => 'type', 'primary' => 'id'],
         ], $source->getReferenceSettings());
+
+        Assert::same(['group' => 'id'], $source->getReferencedTables());
 
         $source->where('group.name = ?', 'Group 1');
 
@@ -145,7 +146,7 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 
         Assert::exception(function () use ($source) {
             $source->fetchLastRawRows();
-        }, Exception::class);
+        }, InvalidStateException::class);
 
         $source->fetchAll();
 

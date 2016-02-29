@@ -6,6 +6,7 @@ namespace Mesour\Sources\Tests;
 use Doctrine\ORM\Query\Expr\Join;
 use Mesour\Sources\DoctrineSource;
 use Mesour\Sources\Exception;
+use Mesour\Sources\InvalidStateException;
 use Mesour\Sources\Tests\Entity\User;
 use Tester\Assert;
 use Mesour\Sources\Tests\Entity\Groups;
@@ -128,8 +129,8 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 
         Assert::same(false, $source->hasReference(Groups::class));
 
-        $source->addReference(Groups::class, 'groupName');
-        $source->addReference(Groups::class, 'groupType');
+        $source->setReference('groupName', Groups::class, 'name');
+        $source->setReference('groupType', Groups::class, 'type');
 
         Assert::same(true, $source->hasReference(Groups::class));
 
@@ -140,11 +141,19 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
         Assert::same(count($source->fetch()), self::COLUMN_RELATION_COUNT);
 
         Assert::same([
-            Groups::class => [
-                'primary_key' => 'id',
-                'columns' => ['groupName', 'groupType'],
+            'groupName' => [
+                'table' => Groups::class,
+                'column' => 'name',
+                'primary' => 'id',
+            ],
+            'groupType' => [
+                'table' => Groups::class,
+                'column' => 'type',
+                'primary' => 'id',
             ],
         ], $source->getReferenceSettings());
+
+        Assert::same([Groups::class => 'id'], $source->getReferencedTables());
 
         $source->where('g.name = :groupName', [
             'groupName' => 'Group 1',
@@ -160,7 +169,7 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 
         Assert::exception(function () use ($source) {
             $source->fetchLastRawRows();
-        }, Exception::class);
+        }, InvalidStateException::class);
 
         $source->fetchAll();
 

@@ -5,6 +5,7 @@ define('DISABLE_AUTOLOAD', TRUE);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+require_once SRC_DIR . 'Mesour/Sources/BaseSource.php';
 require_once SRC_DIR . 'Mesour/Sources/ArrayHash.php';
 require_once SRC_DIR . 'Mesour/Sources/ISource.php';
 require_once SRC_DIR . 'Mesour/Sources/ArraySource.php';

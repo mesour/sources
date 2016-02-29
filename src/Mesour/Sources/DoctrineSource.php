@@ -18,13 +18,10 @@ use Doctrine\ORM\Tools\Pagination\Paginator;
  * @author  Martin Procházka <juniwalk@outlook.cz>
  * @author  Matouš Němec <matous.nemec@mesour.com>
  */
-class DoctrineSource implements ISource
+class DoctrineSource extends BaseSource
 {
 
-    /**
-     * Doctrine QueryBuilder instance.
-     * @var QueryBuilder
-     */
+    /** @var QueryBuilder */
     protected $queryBuilder;
 
     /**
@@ -39,24 +36,12 @@ class DoctrineSource implements ISource
      */
     protected $itemsTotalCount = 0;
 
-    /**
-     * Name of primary column name.
-     * @var string
-     */
-    protected $primaryKey = 'id';
 
     protected $limit = null;
 
     protected $offset = 0;
 
-    private $related = [];
-
-    private $relations = [];
-
     private $whereArr = [];
-
-    /** @var null|array */
-    protected $lastFetchAllResult = null;
 
     /**
      * Initialize Doctrine data source with QueryBuilder instance.
@@ -252,44 +237,6 @@ class DoctrineSource implements ISource
         }
     }
 
-    /**
-     * Get raw data from last fetchAll()
-     *
-     * IMPORTANT! fetchAll() must be called before call this method
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    public function fetchLastRawRows()
-    {
-        if (is_null($this->lastFetchAllResult)) {
-            throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
-        }
-
-        return $this->lastFetchAllResult;
-    }
-
-    /**
-     * Get primary column name.
-     * @return string
-     */
-    public function getPrimaryKey()
-    {
-        return $this->primaryKey;
-    }
-
-    /**
-     * Set new primary column name.
-     * @param  string $column Column name
-     * @return static
-     */
-    public function setPrimaryKey($column)
-    {
-        $this->primaryKey = $column;
-
-        return $this;
-    }
-
     public function fetchPairs($key, $value)
     {
         $results = $this->cloneQueryBuilder()
@@ -305,42 +252,14 @@ class DoctrineSource implements ISource
         return $out;
     }
 
-    public function addReference($table, $column, $primaryKey = 'id')
+    public function getReferencedSource($table, $callback = null, $tablePrefix = '_a0')
     {
-        if (!isset($this->related[$table])) {
-            $this->related[$table]['primary_key'] = $primaryKey;
-        }
-        $this->related[$table]['columns'][] = $column;
-        $this->related[$table]['columns'] = array_unique($this->related[$table]['columns']);
-
-        return $this;
-    }
-
-    public function getReferencedSource($table, $tablePrefix = 'abc')
-    {
-        if (!$this->hasReference($table)) {
-            throw new Exception('Relation ' . $table . ' does not exists.');
-        }
-        if (!isset($this->relations[$table])) {
-            $source = new static(
+        return parent::getReferencedSource($table, $callback ? $callback : function () use ($table, $tablePrefix) {
+            return new static(
                 $this->getQueryBuilder()->getEntityManager()
                     ->createQueryBuilder()->select($tablePrefix)
                     ->from($table, $tablePrefix), $this->columnMapping);
-            $source->setPrimaryKey($this->related[$table]['primary_key']);
-            $this->relations[$table] = $source;
-        }
-
-        return $this->relations[$table];
-    }
-
-    public function hasReference($table)
-    {
-        return isset($this->related[$table]);
-    }
-
-    public function getReferenceSettings()
-    {
-        return $this->related;
+        });
     }
 
     protected function getEntityArrayAsArrays($results)
@@ -414,11 +333,6 @@ class DoctrineSource implements ISource
         }
 
         return $val;
-    }
-
-    public function makeArrayHash(array $data)
-    {
-        return ArrayHash::from($data);
     }
 
     /**

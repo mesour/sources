@@ -15,26 +15,19 @@ use Mesour;
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
  */
-class ArraySource implements ISource
+class ArraySource extends BaseSource
 {
 
     const DATE = 'date';
 
     const _DATE_MARK = '__date_';
 
-    private $primaryKey = 'id';
-
-    private $relations = [];
-
-    private $related = [];
-
     /** @var Mesour\ArrayManage\Searcher\Select */
     protected $select;
 
-    protected $dataArr = [];
+    protected $referencedData = [];
 
-    /** @var null|array */
-    protected $lastFetchAllResult = null;
+    protected $dataArr = [];
 
     protected $structure = [];
 
@@ -43,25 +36,13 @@ class ArraySource implements ISource
      * @param array $relations
      * @throws MissingRequiredException
      */
-    public function __construct(array $data, array $relations = [])
+    public function __construct(array $data, array $referencedData = [])
     {
         if (!class_exists(Mesour\ArrayManage\Searcher\Select::class)) {
             throw new MissingRequiredException('Array data source required composer package "mesour/array-manager".');
         }
         $this->dataArr = $data;
-        $this->relations = $relations;
-    }
-
-    public function setPrimaryKey($primaryKey)
-    {
-        $this->primaryKey = $primaryKey;
-
-        return $this;
-    }
-
-    public function getPrimaryKey()
-    {
-        return $this->primaryKey;
+        $this->referencedData = $referencedData;
     }
 
     /**
@@ -134,23 +115,6 @@ class ArraySource implements ISource
         return $out;
     }
 
-    /**
-     * Get raw data from last fetchAll()
-     *
-     * IMPORTANT! fetchAll() must be called before call this method
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    public function fetchLastRawRows()
-    {
-        if (is_null($this->lastFetchAllResult)) {
-            throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
-        }
-
-        return $this->lastFetchAllResult;
-    }
-
     public function orderBy($row, $sorting = 'ASC')
     {
         $this->getSelect()->orderBy($row, $sorting);
@@ -201,14 +165,17 @@ class ArraySource implements ISource
 
     public function join($table, $key, $column, $columnAlias, $primaryKey = 'id', $left = false)
     {
-        $this->addReference($table, $columnAlias, $primaryKey);
+        $this->setReference($columnAlias, $table, $column, $primaryKey);
 
-        $related = $this->getReferencedSource($table);
+        $source = $this->getReferencedSource($table);
         foreach ($this->dataArr as $_key => $item) {
-            $current = clone $related;
+            /** @var ISource $currentSource */
+            $currentSource = clone $source;
             $item_name = is_string($columnAlias) ? $columnAlias : $column;
             if (isset($item[$key])) {
-                $_item = $current->where($related->getPrimaryKey(), $item[$key], Mesour\ArrayManage\Searcher\Condition::EQUAL)->fetch();
+                $_item = $currentSource
+                    ->where($source->getPrimaryKey(), $item[$key], Mesour\ArrayManage\Searcher\Condition::EQUAL)
+                    ->fetch();
                 if (isset($_item[$column])) {
                     $this->dataArr[$_key][$item_name] = $_item[$column];
                 } else {
@@ -220,60 +187,19 @@ class ArraySource implements ISource
             } else {
                 throw new Exception('Column ' . $key . ' does not exist in data array.');
             }
-            unset($current);
+            unset($currentSource);
         }
 
         return $this;
     }
 
-    public function addReference($table, $column, $primaryKey = 'id')
+    public function getReferencedSource($table, $callback = null)
     {
-        if (!isset($this->related[$table])) {
-            $this->related[$table]['primary_key'] = $primaryKey;
-        }
-        $this->related[$table]['columns'][] = $column;
-        $this->related[$table]['columns'] = array_unique($this->related[$table]['columns']);
-
-        return $this;
+        return parent::getReferencedSource($table, $callback ? $callback : function () use ($table) {
+            return new static($this->referencedData[$table]);
+        });
     }
 
-    /**
-     * @param $table
-     * @return $this
-     * @throws Exception
-     */
-    public function getReferencedSource($table)
-    {
-        if (!$this->hasReference($table)) {
-            throw new Exception('Relation ' . $table . ' does not exists.');
-        }
-        if (!isset($this->relations[$table]) || !$this->relations[$table] instanceof ISource) {
-            if (!is_array($this->relations[$table])) {
-                throw new Exception('Relation ' . $table . ' does not exists.');
-            }
-            $this->relations[$table] = $source = new static($this->relations[$table]);
-            $source->setPrimaryKey($this->related[$table]['primary_key']);
-        }
-
-        return $this->relations[$table];
-    }
-
-    /**
-     * @param $table
-     * @return bool
-     */
-    public function hasReference($table)
-    {
-        return isset($this->related[$table]);
-    }
-
-    /**
-     * @return array
-     */
-    public function getReferenceSettings()
-    {
-        return $this->related;
-    }
 
     /**
      * @return Mesour\ArrayManage\Searcher\Select
@@ -307,11 +233,6 @@ class ArraySource implements ISource
                 unset($out[self::_DATE_MARK . $name]);
             }
         }
-    }
-
-    protected function makeArrayHash(array $val)
-    {
-        return ArrayHash::from($val);
     }
 
 }

@@ -31,7 +31,7 @@ abstract class DataSourceTestCase extends TestCase
 
     static public $credentials = [
         'user' => 'root',
-        'password' => '',
+        'password' => 'root',
     ];
 
     private $pairs = [
@@ -124,16 +124,16 @@ abstract class DataSourceTestCase extends TestCase
 
     protected function matchEmpty(ISource $source)
     {
-        $this->assertCounts($source, 0, 0, 0, TRUE);
+        $this->assertCounts($source, 0, 0, 0, true);
     }
 
-    private function assertCounts(ISource $source, $active_count, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT, $fetch = FALSE)
+    private function assertCounts(ISource $source, $active_count, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT, $fetch = false)
     {
         $itemData = $source->fetch();
         if (!$fetch) {
             Assert::count($columns, $itemData);
         } else {
-            Assert::same(FALSE, $itemData);
+            Assert::same(false, $itemData);
         }
         Assert::count($active_count, $source->fetchAll());
         Assert::same($full, $source->getTotalCount());
@@ -146,6 +146,7 @@ abstract class DataSourceTestCase extends TestCase
         Assert::count(self::LIMIT, $all);
         Assert::same(self::FULL_USER_COUNT, $source->getTotalCount());
         Assert::same(self::LIMIT, $source->count());
+
         return $all;
     }
 }

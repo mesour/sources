@@ -5,6 +5,7 @@ namespace Mesour\Sources\Tests;
 use Mesour\ArrayManage\Searcher\Condition;
 use Mesour\Sources\ArraySource;
 use Mesour\Sources\Exception;
+use Mesour\Sources\InvalidStateException;
 use Tester\Assert;
 use Mesour\Sources\ArrayHash;
 
@@ -124,11 +125,11 @@ abstract class BaseArraySourceTest extends DataSourceTestCase
         Assert::same(count($source->fetch()), self::COLUMN_RELATION_COUNT);
 
         Assert::same([
-            'group' => [
-                'primary_key' => 'id',
-                'columns' => ['group_name', 'group_type'],
-            ],
+            'group_name' => ['table' => 'group', 'column' => 'name', 'primary' => 'id'],
+            'group_type' => ['table' => 'group', 'column' => 'type', 'primary' => 'id'],
         ], $source->getReferenceSettings());
+
+        Assert::same(['group' => 'id'], $source->getReferencedTables());
 
         $source->where('group_name', 'Group 1', Condition::EQUAL);
 
@@ -142,7 +143,7 @@ abstract class BaseArraySourceTest extends DataSourceTestCase
 
         Assert::exception(function () use ($source) {
             $source->fetchLastRawRows();
-        }, Exception::class);
+        }, InvalidStateException::class);
 
         $source->fetchAll();
 

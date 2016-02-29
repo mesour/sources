@@ -15,14 +15,8 @@ use Nette;
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
  */
-class NetteDbSource implements ISource
+class NetteDbSource extends BaseSource
 {
-
-    private $primaryKey = 'id';
-
-    private $related = [];
-
-    private $relations = [];
 
     /** @var Nette\Database\Table\Selection */
     private $netteTable;
@@ -40,9 +34,6 @@ class NetteDbSource implements ISource
     private $offset = 0;
 
     private $totalCount = 0;
-
-    /** @var null|array */
-    protected $lastFetchAllResult = null;
 
     protected $columnMapping = [];
 
@@ -112,7 +103,9 @@ class NetteDbSource implements ISource
         $count = $this->getSelection()->count('*');
         $toEnd = $count - ($this->offset + $this->limit);
 
-        return !is_null($this->limit) && $this->limit < $count ? ($toEnd < $this->limit ? $toEnd : $this->limit) : $count;
+        return !is_null($this->limit) && $this->limit < $count
+            ? ($toEnd < $this->limit ? $toEnd : $this->limit)
+            : $count;
     }
 
 
@@ -132,23 +125,6 @@ class NetteDbSource implements ISource
         }
 
         return $out;
-    }
-
-    /**
-     * Get raw data from last fetchAll()
-     *
-     * IMPORTANT! fetchAll() must be called before call this method
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    public function fetchLastRawRows()
-    {
-        if (is_null($this->lastFetchAllResult)) {
-            throw new Exception('Must call fetchAll() before call fetchLastRawRows() method.');
-        }
-
-        return $this->lastFetchAllResult;
     }
 
     public function orderBy($row, $sorting = 'ASC')
@@ -186,67 +162,11 @@ class NetteDbSource implements ISource
             ->fetchPairs($key, $value);
     }
 
-    public function getPrimaryKey()
+    public function getReferencedSource($table, $callback = null)
     {
-        return $this->primaryKey;
-    }
-
-    public function setPrimaryKey($primaryKey)
-    {
-        $this->primaryKey = $primaryKey;
-
-        return $this;
-    }
-
-    public function addReference($table, $column, $primaryKey = 'id')
-    {
-        if (is_null($this->context)) {
-            throw new Exception('Related require set Nette database context in constructor.');
-        }
-        if (!isset($this->related[$table])) {
-            $this->related[$table]['primary_key'] = $primaryKey;
-        }
-        $this->related[$table]['columns'][] = $column;
-        $this->related[$table]['columns'] = array_unique($this->related[$table]['columns']);
-
-        return $this;
-    }
-
-    /**
-     * @param $table
-     * @return static
-     * @throws Exception
-     */
-    public function getReferencedSource($table)
-    {
-        if (!$this->hasReference($table)) {
-            throw new Exception('Relation for table ' . $table . ' does not exists.');
-        }
-        if (!isset($this->relations[$table])) {
-            $this->relations[$table] = $source = new static(
-                $this->context->table($table), $this->columnMapping, $this->context
-            );
-            $source->setPrimaryKey($this->related[$table]['primary_key']);
-        }
-
-        return $this->relations[$table];
-    }
-
-    /**
-     * @param $table
-     * @return bool
-     */
-    public function hasReference($table)
-    {
-        return isset($this->related[$table]);
-    }
-
-    /**
-     * @return array
-     */
-    public function getReferenceSettings()
-    {
-        return $this->related;
+        return parent::getReferencedSource($table, $callback ? $callback : function () use ($table) {
+            return new static($this->context->table($table), $this->columnMapping, $this->context);
+        });
     }
 
     protected function prefixColumn($column, $newPrefix = null)
@@ -260,11 +180,6 @@ class NetteDbSource implements ISource
         }
 
         return $column;
-    }
-
-    protected function makeArrayHash(array $val)
-    {
-        return ArrayHash::from($val);
     }
 
     protected function getSelection($limit = true, $where = true)

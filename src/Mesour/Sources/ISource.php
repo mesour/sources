@@ -10,19 +10,26 @@
 namespace Mesour\Sources;
 
 
-
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
  */
 interface ISource
 {
 
+    /**
+     * @param $primary_key
+     * @return static
+     */
     public function setPrimaryKey($primary_key);
 
+    /**
+     * @return string
+     */
     public function getPrimaryKey();
 
     /**
      * Get total count without apply where and limit
+     * @return int
      */
     public function getTotalCount();
 
@@ -30,6 +37,7 @@ interface ISource
      * Add where condition
      *
      * @param mixed $args
+     * @return static
      */
     public function where($args);
 
@@ -38,6 +46,7 @@ interface ISource
      *
      * @param int $limit
      * @param int $offset
+     * @return static
      */
     public function applyLimit($limit, $offset = 0);
 
@@ -83,18 +92,31 @@ interface ISource
      *
      * @param $row
      * @param string $sorting sorting direction
-     * @return void
+     * @return static
      */
     public function orderBy($row, $sorting = 'ASC');
 
     /**
+     * @param $columnAlias
      * @param $table
      * @param $column
      * @param $primaryKey
-     * @return $this
+     * @return static
      * @throws Exception
      */
-    public function addReference($table, $column, $primaryKey = 'id');
+    public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id');
+
+    /**
+     * @param $table
+     * @return string
+     */
+    public function getReference($columnAlias);
+
+    /**
+     * @param $table
+     * @return bool
+     */
+    public function hasReference($table);
 
     /**
      * @param $table
@@ -103,10 +125,9 @@ interface ISource
     public function getReferencedSource($table);
 
     /**
-     * @param $table
-     * @return bool
+     * @return array
      */
-    public function hasReference($table);
+    public function getReferencedTables();
 
     /**
      * @return array
