@@ -31,7 +31,7 @@ abstract class DataSourceTestCase extends TestCase
 
     static public $credentials = [
         'user' => 'root',
-        'password' => 'root',
+        'password' => '',
     ];
 
     private $pairs = [
