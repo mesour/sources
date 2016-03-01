@@ -23,7 +23,6 @@
       "nette/database": "to use DataSource for Nette Database",
       "doctrine/orm": "to use DataSource for Doctrine"
   },
-  "minimum-stability": "dev",
   "autoload": {
       "classmap": ["src/"]
   }
