@@ -12,86 +12,86 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Groups
 {
-    /**
-     * @var integer
-     *
-     * @ORM\Column(name="id", type="integer", nullable=false)
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="IDENTITY")
-     */
-    private $id;
+	/**
+	 * @var integer
+	 *
+	 * @ORM\Column(name="id", type="integer", nullable=false)
+	 * @ORM\Id
+	 * @ORM\GeneratedValue(strategy="IDENTITY")
+	 */
+	private $id;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="name", type="string", length=32, nullable=false)
-     */
-    private $name;
+	/**
+	 * @var string
+	 *
+	 * @ORM\Column(name="name", type="string", length=32, nullable=false)
+	 */
+	private $name;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="type", type="string", length=32, nullable=false)
-     */
-    private $type;
+	/**
+	 * @var string
+	 *
+	 * @ORM\Column(name="type", type="string", length=32, nullable=false)
+	 */
+	private $type;
 
 
-    /**
-     * Get id
-     *
-     * @return integer
-     */
-    public function getId()
-    {
-        return $this->id;
-    }
+	/**
+	 * Get id
+	 *
+	 * @return integer
+	 */
+	public function getId()
+	{
+		return $this->id;
+	}
 
-    /**
-     * Set name
-     *
-     * @param string $name
-     *
-     * @return Groups
-     */
-    public function setName($name)
-    {
-        $this->name = $name;
+	/**
+	 * Set name
+	 *
+	 * @param string $name
+	 *
+	 * @return Groups
+	 */
+	public function setName($name)
+	{
+		$this->name = $name;
 
-        return $this;
-    }
+		return $this;
+	}
 
-    /**
-     * Get name
-     *
-     * @return string
-     */
-    public function getName()
-    {
-        return $this->name;
-    }
+	/**
+	 * Get name
+	 *
+	 * @return string
+	 */
+	public function getName()
+	{
+		return $this->name;
+	}
 
-    /**
-     * Set type
-     *
-     * @param string $name
-     *
-     * @return Groups
-     */
-    public function setType($type)
-    {
-        $this->type = $type;
+	/**
+	 * Set type
+	 *
+	 * @param string $name
+	 *
+	 * @return Groups
+	 */
+	public function setType($type)
+	{
+		$this->type = $type;
 
-        return $this;
-    }
+		return $this;
+	}
 
-    /**
-     * Get type
-     *
-     * @return string
-     */
-    public function getType()
-    {
-        return $this->type;
-    }
+	/**
+	 * Get type
+	 *
+	 * @return string
+	 */
+	public function getType()
+	{
+		return $this->type;
+	}
 }
 

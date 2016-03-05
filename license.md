@@ -2,7 +2,7 @@ Licenses
 ========
 
 Good news! You may use Mesour Sources under the terms of either
-the New BSD License or the GNU General Public License (GPL) version 3.
+the New BSD License or the GNU General Public License (GPL) version 2 or 3.
 
 You don't have to notify anyone which license you are using. You can freely
 use Mesour Sources in commercial projects as long as the copyright header
@@ -47,4 +47,5 @@ GNU General Public License
 GPL licenses are very very long, so instead of including them here we offer
 you URLs with full text:
 
+- [GPL version 2](http://www.gnu.org/licenses/gpl-2.0.html)
 - [GPL version 3](http://www.gnu.org/licenses/gpl-3.0.html)

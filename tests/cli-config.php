@@ -4,9 +4,9 @@
 $entityManager = require_once __DIR__ . '/../demo/bootstrap.php';
 
 $entityManager->getConfiguration()->setMetadataDriverImpl(
-    new \Doctrine\ORM\Mapping\Driver\DatabaseDriver(
-        $entityManager->getConnection()->getSchemaManager()
-    )
+	new \Doctrine\ORM\Mapping\Driver\DatabaseDriver(
+		$entityManager->getConnection()->getSchemaManager()
+	)
 );
 
 $cmf = new \Doctrine\ORM\Tools\DisconnectedClassMetadataFactory();
@@ -20,4 +20,4 @@ $entityGenerator->setGenerateStubMethods(true);
 $entityGenerator->setRegenerateEntityIfExists(false);
 $entityGenerator->setUpdateEntityIfExists(true);
 $entityGenerator->setUpdateEntityIfExists(true);
-$entityGenerator->generate($metadata, __dir__. '/Entity');
+$entityGenerator->generate($metadata, __dir__ . '/Entity');

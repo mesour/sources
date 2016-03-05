@@ -1,7 +1,7 @@
 <?php
 
 define('SRC_DIR', __DIR__ . '/../src/');
-define('DISABLE_AUTOLOAD', TRUE);
+define('DISABLE_AUTOLOAD', true);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -21,8 +21,8 @@ require_once __DIR__ . '/classes/Connection.php';
 require_once __DIR__ . '/classes/DatabaseFactory.php';
 
 if (!class_exists('Tester\Assert')) {
-    echo "Install Nette Tester using `composer update --dev`\n";
-    exit(1);
+	echo "Install Nette Tester using `composer update --dev`\n";
+	exit(1);
 }
 @mkdir(__DIR__ . "/log");
 @mkdir(__DIR__ . "/tmp");
