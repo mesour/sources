@@ -43,14 +43,18 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 
 		$isDevMode = false;
 
-		$config = Setup::createConfiguration($isDevMode);
+		$cache = new \Doctrine\Common\Cache\FilesystemCache(__DIR__ . '/../tmp');
+		$config = Setup::createConfiguration($isDevMode, __DIR__ . '/../tmp', $cache);
+		$config->setProxyDir(__DIR__ . '/../tmp');
+		$config->setProxyNamespace('MyProject\Proxies');
+
+		$config->setAutoGenerateProxyClasses(true);
 
 		$paths = [__DIR__ . "/../Entity"];
 
 		$driver = new \Doctrine\ORM\Mapping\Driver\AnnotationDriver(new AnnotationReader(), $paths);
 		\Doctrine\Common\Annotations\AnnotationRegistry::registerLoader('class_exists');
 		$config->setMetadataDriverImpl($driver);
-		$config->setMetadataCacheImpl(new \Doctrine\Common\Cache\FilesystemCache(__DIR__ . '/../tmp'));
 		$conn = [
 			'driver' => 'mysqli',
 			'host' => '127.0.0.1',
