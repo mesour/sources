@@ -2,7 +2,6 @@
 /vendor
 /composer.lock
 /tests/tmp/*
-!/tests/tmp/.htaccess
 /tests/log
 /tests/config.local.php
 /demo/log
