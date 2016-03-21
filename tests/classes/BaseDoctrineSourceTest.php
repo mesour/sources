@@ -56,7 +56,7 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 			'host' => '127.0.0.1',
 			'user' => $this->databaseFactory->getUserName(),
 			'password' => $this->databaseFactory->getPassword(),
-			'dbname' => 'sources_test',
+			'dbname' => $this->databaseFactory->getDatabaseName(),
 		];
 
 		$this->entityManager = EntityManager::create($conn, $config);
