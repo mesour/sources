@@ -10,7 +10,7 @@
 namespace Mesour\Sources;
 
 use Mesour;
-
+use Mesour\Sources\Structures\Columns;
 
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
@@ -29,15 +29,15 @@ class ArraySource extends BaseSource
 
 	protected $dataArr = [];
 
-	protected $structure = [];
-
 	/**
 	 * @param array $data
 	 * @param array $relations
 	 * @throws MissingRequiredException
 	 */
-	public function __construct(array $data, array $referencedData = [])
+	public function __construct($tableName, $primaryKey, array $data = [], array $referencedData = [])
 	{
+		parent::__construct($tableName, $primaryKey);
+
 		if (!class_exists(Mesour\ArrayManage\Searcher\Select::class)) {
 			throw new MissingRequiredException('Array data source required composer package "mesour/array-manager".');
 		}
@@ -57,7 +57,10 @@ class ArraySource extends BaseSource
 
 	public function where($column, $value = null, $condition = null, $operator = 'and')
 	{
-		if (isset($this->structure[$column]) && $this->structure[$column] === self::DATE) {
+		if (
+			$this->getDataStructure()->hasColumn($column)
+			&& $this->getDataStructure()->getColumn($column)->getType() === Columns\IColumnStructure::DATE
+		) {
 			$value = $this->fixDate($value);
 			$column = self::_DATE_MARK . $column;
 		}
@@ -102,10 +105,8 @@ class ArraySource extends BaseSource
 	public function fetchAll()
 	{
 		$out = $this->getSelect()->fetchAll();
-		if (count($this->structure) > 0) {
-			foreach ($out as $key => $val) {
-				$this->removeStructureDate($out[$key]);
-			}
+		foreach ($out as $key => $val) {
+			$this->removeStructureDate($out[$key]);
 		}
 		foreach ($out as $key => $val) {
 			$out[$key] = $this->makeArrayHash($val);
@@ -131,9 +132,7 @@ class ArraySource extends BaseSource
 		if (!$data) {
 			return false;
 		}
-		if (count($this->structure) > 0) {
-			$this->removeStructureDate($data);
-		}
+		$this->removeStructureDate($data);
 
 		return $this->makeArrayHash($data);
 	}
@@ -156,17 +155,8 @@ class ArraySource extends BaseSource
 		return $output;
 	}
 
-	public function setStructure(array $structure)
+	public function joinField($table, $key, $column, $columnAlias, $left = false)
 	{
-		$this->structure = $structure;
-
-		return $this;
-	}
-
-	public function join($table, $key, $column, $columnAlias, $primaryKey = 'id', $left = false)
-	{
-		$this->setReference($columnAlias, $table, $column, $primaryKey);
-
 		$source = $this->getReferencedSource($table);
 		foreach ($this->dataArr as $_key => $item) {
 			/** @var ISource $currentSource */
@@ -192,14 +182,80 @@ class ArraySource extends BaseSource
 
 		return $this;
 	}
+	
+	public function attachTable($table, $key, $columnAlias, $left = false)
+	{
+		$source = $this->getReferencedSource($table);
+		foreach ($this->dataArr as $_key => $item) {
+			/** @var ISource $currentSource */
+			$currentSource = clone $source;
+			if (isset($item[$this->getPrimaryKey()])) {
+				$_items = $currentSource
+					->where($key, $item[$this->getPrimaryKey()], Mesour\ArrayManage\Searcher\Condition::EQUAL)
+					->fetchAll();
+				
+				$this->dataArr[$_key][$columnAlias] = $_items;
+			} elseif ($left) {
+				$this->dataArr[$_key][$columnAlias] = [];
+			} else {
+				throw new Exception('Column ' . $key . ' does not exist in data array.');
+			}
+			unset($currentSource);
+		}
+
+		return $this;
+	}
+	
+	public function attachManyTable(Columns\ManyToManyColumnStructure $columnStructure, $left = false)
+	{
+		$source = $this->getReferencedSource($columnStructure->getReferencedTable());
+		foreach ($this->dataArr as $_key => $item) {
+			/** @var ISource $currentSource */
+			$currentSource = clone $source;
+			if (isset($item[$this->getPrimaryKey()])) {
+				$_items = $currentSource
+					->where($columnStructure->getReferencedColumn(), $item[$this->getPrimaryKey()], Mesour\ArrayManage\Searcher\Condition::EQUAL)
+					->fetchAll();
+
+				$itemSource = $this->getReferencedSource($columnStructure->getTableStructure()->getName());
+				foreach ($_items as $current) {
+					$itemSource->where(
+						$columnStructure->getTableStructure()->getPrimaryKey(),
+						$current[$columnStructure->getSelfColumn()],
+						Mesour\ArrayManage\Searcher\Condition::EQUAL,
+						'or'
+					);
+				}
+				
+				$this->dataArr[$_key][$columnStructure->getName()] = $itemSource->fetchAll();
+			} elseif ($left) {
+				$this->dataArr[$_key][$columnStructure->getName()] = [];
+			} else {
+				throw new Exception('Primary column ' . $this->getPrimaryKey() . ' not exists in data array.');
+			}
+			unset($currentSource);
+		}
+
+		return $this;
+	}
 
 	public function getReferencedSource($table, $callback = null)
 	{
-		return parent::getReferencedSource($table, $callback ? $callback : function () use ($table) {
-			return new static($this->referencedData[$table]);
-		});
+		return parent::getReferencedSource(
+			$table,
+			$callback ? $callback : function () use ($table) {
+				if (!isset($this->referencedData[$table])) {
+					throw new InvalidStateException('Array with key does not exists in secon __construct parameter.');
+				}
+				$tableStructure = $this->getDataStructure()->getTableStructure($table);
+				return new static(
+					$tableStructure->getName(),
+					$tableStructure->getPrimaryKey(),
+					$this->referencedData[$table]
+				);
+			}
+		);
 	}
-
 
 	/**
 	 * @return Mesour\ArrayManage\Searcher\Select
@@ -208,15 +264,13 @@ class ArraySource extends BaseSource
 	protected function getSelect()
 	{
 		if (!$this->select) {
-			if (count($this->structure)) {
-				foreach ($this->structure as $name => $value) {
-					if ($value === self::DATE) {
-						foreach ($this->dataArr as $key => $item) {
-							if (!array_key_exists($name, $item)) {
-								throw new Exception('Column ' . $name . ' does not exists in source array.');
-							}
-							$this->dataArr[$key][self::_DATE_MARK . $name] = $this->fixDate($item[$name]);
+			foreach ($this->getDataStructure()->getColumns() as $column) {
+				if ($column->getType() === Columns\IColumnStructure::DATE) {
+					foreach ($this->dataArr as $key => $item) {
+						if (!array_key_exists($column->getName(), $item)) {
+							throw new Exception('Column ' . $column->getName() . ' does not exists in source array.');
 						}
+						$this->dataArr[$key][self::_DATE_MARK . $column->getName()] = $this->fixDate($item[$column->getName()]);
 					}
 				}
 			}
@@ -228,9 +282,9 @@ class ArraySource extends BaseSource
 
 	protected function removeStructureDate(&$out)
 	{
-		foreach ($this->structure as $name => $type) {
-			if ($type === self::DATE) {
-				unset($out[self::_DATE_MARK . $name]);
+		foreach ($this->getDataStructure()->getColumns() as $column) {
+			if ($column->getType() === Columns\IColumnStructure::DATE) {
+				unset($out[self::_DATE_MARK . $column->getName()]);
 			}
 		}
 	}

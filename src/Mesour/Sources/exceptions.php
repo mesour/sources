@@ -25,3 +25,7 @@ class InvalidArgumentException extends \InvalidArgumentException
 class InvalidStateException extends \LogicException
 {
 }
+
+class TableNotExistException extends \LogicException
+{
+}

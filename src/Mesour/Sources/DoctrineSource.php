@@ -9,10 +9,14 @@
 
 namespace Mesour\Sources;
 
+use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\Tools\Pagination\Paginator;
+use Mesour\Sources\Structures\Columns\IColumnStructure;
 
 /**
  * @author  Martin Procházka <juniwalk@outlook.cz>
@@ -43,15 +47,12 @@ class DoctrineSource extends BaseSource
 
 	private $whereArr = [];
 
-	/**
-	 * Initialize Doctrine data source with QueryBuilder instance.
-	 * @param QueryBuilder $queryBuilder Source of data
-	 * @param array $columnMapping Column name mapper
-	 */
-	public function __construct(QueryBuilder $queryBuilder, array $columnMapping = [])
+	public function __construct($tableName, $primaryKey, QueryBuilder $queryBuilder, array $columnMapping = [])
 	{
 		$this->queryBuilder = clone $queryBuilder;
 		$this->columnMapping = $columnMapping;
+
+		parent::__construct($tableName, $primaryKey);
 	}
 
 	/**
@@ -121,16 +122,13 @@ class DoctrineSource extends BaseSource
 			return $this->itemsTotalCount;
 		}
 
-		// Remove WHERE condition from QueryBuilder
 		$query = $this->cloneQueryBuilder(true, true)
 			->getQuery();
 
-		// Get total count without WHERE and LIMIT applied
 		$this->itemsTotalCount = (new Paginator($query))->count();
 
 		return $this->itemsTotalCount;
 	}
-
 
 	/**
 	 * Apply limit and offset.
@@ -213,8 +211,13 @@ class DoctrineSource extends BaseSource
 	public function fetch()
 	{
 		try {
-			return $this->fixResult($this->cloneQueryBuilder()->setMaxResults(1)
-				->getQuery()->getSingleResult(Query::HYDRATE_ARRAY), true);
+			$entity = $this->cloneQueryBuilder()->setMaxResults(1)
+				->getQuery()->getSingleResult();
+			if (!$entity) {
+				return false;
+			}
+			$result = $this->fixResult($this->getEntityArrayAsArrays([$entity]), true);
+			return reset($result);
 		} catch (NoResultException $e) {
 			return false;
 		}
@@ -262,76 +265,173 @@ class DoctrineSource extends BaseSource
 		});
 	}
 
-	protected function getEntityArrayAsArrays($results)
+	public function getTableColumns($table, $internal = false)
 	{
-		$em = $this->getQueryBuilder()->getEntityManager();
+		if (
+			!$internal
+			&& ($this->getDataStructure()->hasTableStructure($table) || $table === $this->getTableName())
+		) {
+			return parent::getTableColumns($table, $internal);
+		}
+		$columns = $this->queryBuilder->getEntityManager()->getConnection()->getSchemaManager()
+			->listTableColumns($this->getTableNameFromClassName($table));
+		return $this->determineFromColumns($columns, $table);
+	}
+
+	protected function initializeDataStructure($tableName, $primaryKey)
+	{
+		$dataStructure = new Structures\DataStructure($tableName, $primaryKey);
+
+		$this->setDataStructure($dataStructure);
+
+		$entityManager = $this->queryBuilder->getEntityManager();
+		$schemaManager = $entityManager->getConnection()->getSchemaManager();
+
+		$tables = $schemaManager->listTables();
+		$columns = $schemaManager->listTableColumns($this->getTableNameFromClassName($tableName));
+
+		$determinedColumns = $this->determineFromColumns($columns, $tableName);
+
+		Helpers::setStructureFromColumns($dataStructure, $determinedColumns);
+
+		$classMetaData = $this->getQueryBuilder()->getEntityManager()->getClassMetadata($tableName);
+
+		foreach ($classMetaData->getAssociationMappings() as $associationMapping) {
+			$targetEntity = $associationMapping['targetEntity'];
+
+			$currentTableInstance = null;
+			foreach ($tables as $_table) {
+				if ($_table->getName() === $this->getTableNameFromClassName($targetEntity)) {
+					$currentTableInstance = $_table;
+					break;
+				}
+			}
+			if (!$currentTableInstance) {
+				throw new TableNotExistException("Table for entity $targetEntity not exists.");
+			}
+
+			$primaryColumns = $currentTableInstance->getPrimaryKey()->getColumns();
+			$dataStructure->getOrCreateTableStructure($targetEntity, reset($primaryColumns));
+		}
+	}
+
+	private function determineFromColumns(array $columns, $table)
+	{
+		$classMetaData = $this->getQueryBuilder()->getEntityManager()->getClassMetadata($table);
 
 		$out = [];
-		foreach ($results as $result) {
-			$addedColumns = [];
-			if (is_array($result)) {
-				$instance = reset($result);
-				unset($result[0]);
-				$addedColumns = $result;
+		/** @var Column $column */
+		foreach ($columns as $column) {
+			$fieldMapping = [];
+			try {
+				$fieldMapping = $classMetaData->getFieldMapping($classMetaData->getFieldName($column->getName()));
+			} catch (MappingException $e) {
+				$fieldMapping['type'] = 'undefined';
+			}
+
+			if (strtolower($fieldMapping['type']) === 'enum') {
+				$out[$column->getName()] = [
+					'type' => IColumnStructure::ENUM,
+				];
+				$enum = $fieldMapping['columnDefinition'];
+				$options = str_getcsv(str_replace('enum(', '', substr($enum, 0, strlen($enum) - 1)), ',', "'");
+
+				$out[$column->getName()]['values'] = [];
+				foreach ($options as $option) {
+					$out[$column->getName()]['values'][] = $option;
+				}
 			} else {
-				$instance = $result;
-			}
+				$type = $column->getType()->getName();
 
-			$classMetaData = $em->getClassMetadata(get_class($instance));
-			$fieldNames = $classMetaData->getFieldNames();
-
-			$item = [];
-			foreach ($fieldNames as $key => $fieldName) {
-				$method = sprintf('get%s', ucwords($fieldName));
-				$item[$fieldName] = $instance->{$method}();
+				switch ($type) {
+					case Type::STRING :
+					case Type::TEXT :
+						$out[$column->getName()] = [
+							'type' => IColumnStructure::TEXT,
+						];
+						break;
+					case Type::INTEGER :
+					case Type::FLOAT :
+					case Type::SMALLINT :
+					case Type::BIGINT :
+					case Type::DECIMAL :
+						$out[$column->getName()] = [
+							'type' => IColumnStructure::NUMBER,
+						];
+						break;
+					case Type::DATETIME :
+					case Type::DATETIMETZ :
+					case Type::DATE :
+					case Type::TIME :
+						$out[$column->getName()] = [
+							'type' => IColumnStructure::DATE,
+						];
+						break;
+					case Type::BOOLEAN :
+						$out[$column->getName()] = [
+							'type' => IColumnStructure::BOOL,
+						];
+						break;
+				}
 			}
-			if (count($addedColumns) > 0) {
-				$item = array_merge($item, $addedColumns);
-			}
-
-			$out[] = $item;
 		}
+		return $out;
+	}
 
+	/**
+	 * @param string $table Table name
+	 * @return string Entity class name, null if not found
+	 */
+	protected function getTableNameFromClassName($table)
+	{
+		return $this->getQueryBuilder()->getEntityManager()
+			->getClassMetadata($table)
+			->getTableName();
+	}
+
+	protected function getClassNameFromTableName($table)
+	{
+		$em = $this->getQueryBuilder()->getEntityManager();
+		$classNames = $em->getConfiguration()->getMetadataDriverImpl()->getAllClassNames();
+		foreach ($classNames as $className) {
+			$classMetaData = $em->getClassMetadata($className);
+			if ($table == $classMetaData->getTableName()) {
+				return $classMetaData->getName();
+			}
+		}
+		return null;
+	}
+
+	protected function getEntityArrayAsArrays(array $results)
+	{
+		$out = [];
+		foreach ($results as $entity) {
+			if (method_exists($entity, 'toArray')) {
+				$out[] = $entity->toArray();
+			} else {
+				throw new InvalidStateException(
+					sprintf('Entity %s must have method toArray.', get_class($entity))
+				);
+			}
+		}
 		return $out;
 	}
 
 	protected function fixResult(array $val, $fetch = false)
 	{
 		if (count($val) > 0) {
-			$hasSubArray = is_array(reset($val));
-
-			if (!$hasSubArray) {
-				return $this->makeArrayHash($val);
-			}
 			$out = [];
 			if ($fetch) {
 				$val = [$val];
 			}
 			foreach ($val as $item) {
-				if (is_array($item)) {
-					foreach ($item as $key => $subItem) {
-						if (is_numeric($key) && is_array($subItem)) {
-							foreach ($subItem as $keyName => $subItemValue) {
-								$item[$keyName] = $subItemValue;
-
-							}
-							unset($item[$key]);
-						}
-					}
-				}
-				foreach ($item as $itemKey => $val) {
-					unset($item[$itemKey]);
-					$item[$itemKey] = $val;
-				}
 				$out[] = $this->makeArrayHash($item);
 				if ($fetch) {
 					return reset($out);
 				}
 			}
-
 			return $out;
 		}
-
 		return $val;
 	}
 

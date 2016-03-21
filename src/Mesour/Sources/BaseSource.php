@@ -10,7 +10,7 @@
 namespace Mesour\Sources;
 
 use Mesour;
-
+use Mesour\Sources\Structures;
 
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
@@ -18,16 +18,28 @@ use Mesour;
 abstract class BaseSource implements ISource
 {
 
-	private $primaryKey = 'id';
-
-	private $references = [];
-
-	private $referencedTables = [];
+	/**
+	 * @var Structures\DataStructure
+	 */
+	protected $dataStructure;
 
 	private $referencedSources = [];
 
 	/** @var null|array */
 	protected $lastFetchAllResult = null;
+
+	public function __construct($tableName, $primaryKey)
+	{
+		$this->initializeDataStructure($tableName, $primaryKey);
+	}
+
+	/**
+	 * @return Structures\DataStructure
+	 */
+	public function getDataStructure()
+	{
+		return $this->dataStructure;
+	}
 
 	/**
 	 * Get raw data from last fetchAll()
@@ -45,50 +57,17 @@ abstract class BaseSource implements ISource
 		return $this->lastFetchAllResult;
 	}
 
-	public function setPrimaryKey($primaryKey)
-	{
-		$this->primaryKey = $primaryKey;
-		return $this;
-	}
-
 	public function getPrimaryKey()
 	{
-		return $this->primaryKey;
-	}
-
-	public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id')
-	{
-		if (!isset($this->references[$columnAlias])) {
-			$this->addReferencedTable($table, $primaryKey);
-			$this->references[$columnAlias] = [
-				'table' => $table,
-				'column' => $referencedColumn,
-				'primary' => $primaryKey,
-			];
-		} else {
-			throw new InvalidArgumentException('Reference for this column alias already exist.');
-		}
-
-		return $this;
+		return $this->getDataStructure()->getPrimaryKey();
 	}
 
 	/**
-	 * @param $table
-	 * @return bool
+	 * @return string
 	 */
-	public function getReference($columnAlias)
+	public function getTableName()
 	{
-		if (!isset($this->references[$columnAlias])) {
-			throw new InvalidArgumentException(
-				sprintf('Reference for column alias %s does not exist.', $columnAlias)
-			);
-		}
-		return $this->references[$columnAlias];
-	}
-
-	public function getReferencedTables()
-	{
-		return $this->referencedTables;
+		return $this->getDataStructure()->getName();
 	}
 
 	/**
@@ -102,8 +81,8 @@ abstract class BaseSource implements ISource
 			return $this->referencedSources[$table];
 		}
 
-		if (!$this->hasReference($table)) {
-			throw new InvalidArgumentException('Relation ' . $table . ' does not exists.');
+		if (!$this->getDataStructure()->hasTableStructure($table)) {
+			throw new InvalidArgumentException('Table structure ' . $table . ' does not exists.');
 		}
 		if (!is_callable($callback)) {
 			throw new InvalidArgumentException(
@@ -114,41 +93,109 @@ abstract class BaseSource implements ISource
 		$source = call_user_func($callback);
 		if (!$source instanceof ISource) {
 			throw new InvalidArgumentException(
-				sprintf('Callback must return instance of %s. %s given.', Isource::class, $callback)
+				sprintf('Callback must return instance of %s. %s given.', ISource::class, $callback)
 			);
 		}
 		$this->referencedSources[$table] = $source;
-		$source->setPrimaryKey($this->referencedTables[$table]);
 
 		return $source;
 	}
 
-	/**
-	 * @return array
-	 */
-	public function getReferenceSettings()
+	public function setDataStructure(Structures\ITableStructure $dataStructure)
 	{
-		return $this->references;
-	}
-
-	/**
-	 * @param $table
-	 * @return bool
-	 */
-	public function hasReference($table)
-	{
-		return isset($this->referencedTables[$table]);
-	}
-
-	protected function addReferencedTable($table, $primaryKey = 'id')
-	{
-		$this->referencedTables[$table] = $primaryKey;
+		$this->dataStructure = $dataStructure;
+		if($dataStructure instanceof Structures\IDataStructure) {
+			$this->dataStructure->setSource($this);
+		}
 		return $this;
+	}
+
+	public function getTableColumns($table, $internal = false)
+	{
+		if (
+			!$internal
+			&& ($this->getDataStructure()->hasTableStructure($table) || $table === $this->getTableName())
+		) {
+			if($table === $this->getTableName()) {
+				$columns = $this->getDataStructure()->getColumns();
+			} else {
+				$columns = $this->getDataStructure()->getTableStructure($table)->getColumns();
+			}
+			if (count($columns) > 0) {
+				return Helpers::getColumnsArrayFromStructure($columns);
+			}
+		}
+		return [];
+	}
+
+	public function addTableToStructure($table, $primaryKey)
+	{
+		return $this->getDataStructure()->getOrCreateTableStructure($table, $primaryKey);
 	}
 
 	protected function makeArrayHash(array $val)
 	{
 		return ArrayHash::from($val);
+	}
+
+	protected function initializeDataStructure($tableName, $primaryKey)
+	{
+		$dataStructure = new Structures\DataStructure($tableName, $primaryKey);
+
+		$this->setDataStructure($dataStructure);
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function setPrimaryKey($primaryKey)
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
+		return $this;
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id')
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
+		return $this;
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function getReferenceSettings()
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
+		return [];
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function hasReference($table)
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
+		return false;
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function getReferencedTables()
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
+		return [];
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function getReference($columnAlias)
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
 	}
 
 }

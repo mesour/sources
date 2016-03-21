@@ -2,9 +2,12 @@
 
 namespace Mesour\Sources\Tests;
 
-use Mesour\Sources\Exception;
 use Mesour\Sources\InvalidStateException;
-use Mesour\Sources\NetteDbSource;
+use Mesour\Sources\NetteDbTableSource;
+use Mesour\Sources\Structures\Columns\IColumnStructure;
+use Mesour\Sources\Tests\Entity\Company;
+use Mesour\Sources\Tests\Entity\Group;
+use Mesour\Sources\Tests\Entity\UserAddress;
 use Nette\Caching\Storages\MemoryStorage;
 use Tester\Assert;
 use Nette\Database;
@@ -24,7 +27,7 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 	/** @var \Nette\Database\Table\Selection */
 	protected $empty;
 
-	protected $tableName = 'user';
+	protected $tableName = 'users';
 
 	protected $columnMapping = [
 		'group_name' => 'group.name',
@@ -53,96 +56,57 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 
 	public function testPrimaryKey()
 	{
-		$source = new NetteDbSource($this->user, $this->tableName);
+		$source = new NetteDbTableSource($this->tableName, 'id', $this->user, $this->context);
 		$this->matchPrimaryKey($source);
 	}
 
 	public function testTotalCount()
 	{
-		$source = new NetteDbSource($this->user, $this->tableName);
-		$this->matchTotalCount($source);
+		$source = new NetteDbTableSource($this->tableName, 'id', $this->user, $this->context);
+		Assert::same(self::FULL_USER_COUNT, $source->getTotalCount());
 	}
 
 	public function testFetchPairs()
 	{
-		$source = new NetteDbSource($this->user, $this->tableName);
+		$source = new NetteDbTableSource($this->tableName, 'id', $this->user, $this->context);
 		$this->matchPairs($source);
 	}
 
 	public function testLimit()
 	{
-		$source = new NetteDbSource($this->user, $this->tableName);
+		$source = new NetteDbTableSource($this->tableName, 'id', $this->user, $this->context);
 		$this->matchLimit($source);
 	}
 
 	public function testOffset()
 	{
-		$source = new NetteDbSource($this->user, $this->tableName);
+		$source = new NetteDbTableSource($this->tableName, 'id', $this->user, $this->context);
 		$this->matchOffset($source);
 	}
 
 	public function testWhere()
 	{
-		$source = new NetteDbSource($this->user, $this->tableName);
+		$source = new NetteDbTableSource($this->tableName, 'id', $this->user, $this->context);
 		$source->where('action = ?', self::ACTIVE_STATUS);
 		$this->matchWhere($source, self::FULL_USER_COUNT, self::COLUMN_COUNT);
 	}
 
 	public function testWhereDate()
 	{
-		$source = new NetteDbSource($this->user, $this->tableName);
+		$source = new NetteDbTableSource($this->tableName, 'id', $this->user, $this->context);
 		$source->where('last_login > ?', self::DATE_BIGGER);
 		$this->matchWhereDate($source, self::FULL_USER_COUNT, self::COLUMN_COUNT);
 	}
 
 	public function testEmpty()
 	{
-		$source = new NetteDbSource($this->empty, 'empty');
+		$source = new NetteDbTableSource('empty', 'id', $this->empty, $this->context);
 		$this->matchEmpty($source);
-	}
-
-	public function testRelated()
-	{
-		$selection = clone $this->user;
-		$selection->select('user.*')
-			->select('group.name group_name')
-			->select('group.type group_type');
-
-		$source = new NetteDbSource($selection, $this->columnMapping, $this->context);
-
-		Assert::same(false, $source->hasReference('group'));
-
-		$source->setReference('group_name', 'group', 'name');
-		$source->setReference('group_type', 'group', 'type');
-
-		$firstRow = $source->fetch();
-		Assert::count(self::COLUMN_RELATION_COUNT, $firstRow);
-		Assert::same(self::FIRST_GROUP_NAME, $firstRow['group_name']);
-
-		Assert::same(true, $source->hasReference('group'));
-
-		$related = $source->getReferencedSource('group');
-
-		Assert::type('Mesour\Sources\NetteDbSource', $related);
-		Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
-		Assert::same(count($source->fetch()), self::COLUMN_RELATION_COUNT);
-
-		Assert::same([
-			'group_name' => ['table' => 'group', 'column' => 'name', 'primary' => 'id'],
-			'group_type' => ['table' => 'group', 'column' => 'type', 'primary' => 'id'],
-		], $source->getReferenceSettings());
-
-		Assert::same(['group' => 'id'], $source->getReferencedTables());
-
-		$source->where('group.name = ?', 'Group 1');
-
-		Assert::count(self::USERS_WITH_FIRST_GROUP, $source->fetchAll());
 	}
 
 	public function testFetchLastRawRows()
 	{
-		$source = new NetteDbSource($this->user, $this->tableName, $this->context);
-		$source->setPrimaryKey('user_id');
+		$source = new NetteDbTableSource($this->tableName, 'id', $this->user, $this->context);
 
 		Assert::exception(function () use ($source) {
 			$source->fetchLastRawRows();
@@ -156,6 +120,63 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 		foreach ($rawData as $item) {
 			Assert::type(Database\Table\ActiveRow::class, $item);
 		}
+	}
+
+	public function testLoadedDataStructure()
+	{
+		$source = new NetteDbTableSource($this->tableName, 'id', $this->user, $this->context, $this->columnMapping);
+		
+		$source->addTableToStructure('companies', 'id');
+
+		$tableNames = [
+			'groups',
+			'user_addresses',
+			'companies',
+			'user_companies',
+		];
+
+		$this->assertDataStructure($source, $tableNames);
+	}
+
+	public function testReferencedData()
+	{
+		$selection = clone $this->user;
+		$selection->select('users.*')
+			->select('group.name group_name')
+			->select('group.date group_date')
+			->select('group.type group_type');
+
+		$source = new NetteDbTableSource($this->tableName, 'id', $selection, $this->context, $this->columnMapping);
+
+		$source->addTableToStructure('companies', 'id');
+
+		$dataStructure = $source->getDataStructure();
+
+		$dataStructure->addOneToOne('group_name', 'groups', 'name');
+		$dataStructure->addOneToOne('group_type', 'groups', 'type');
+		$dataStructure->addOneToOne('group_date', 'groups', 'date');
+
+		$dataStructure->addOneToMany(
+			'addresses',
+			'user_addresses',
+			'user_id',
+			'{street}, {zip} {city}, {country}'
+		);
+
+		$dataStructure->addManyToMany(
+			'companies',
+			'companies',
+			'company_id',
+			'user_companies',
+			'user_id',
+			'{street}, {zip} {city}, {country}'
+		);
+		$item = $source->fetchAll();
+		Assert::equal(reset($item), $firstItem = $source->fetch());
+		Assert::count(self::FULL_COLUMN_COUNT, array_keys((array)$firstItem));
+
+		Assert::count(3, $firstItem['companies']);
+		Assert::count(1, $firstItem['addresses']);
 	}
 
 }

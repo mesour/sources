@@ -3,17 +3,18 @@ namespace Mesour\Sources\Tests;
 
 use Mesour\Sources\DoctrineSource;
 use Mesour\Sources\ISource;
+use Mesour\Sources\Structures\Columns\IColumnStructure;
 use Tester\Assert;
 use \Tester\TestCase;
 
 abstract class DataSourceTestCase extends TestCase
 {
 
-	CONST DEFAULT_PRIMARY_KEY = 'id',
-		OWN_PRIMARY_KEY = 'user_id',
-		OWN_PRIMARY_KEY_DOCTRINE = 'userId',
+	CONST CHANGED_PRIMARY_KEY = 'user_id',
+		OWN_PRIMARY_KEY = 'id',
 		FULL_USER_COUNT = 20,
-		COLUMN_COUNT = 11,
+		COLUMN_COUNT = 13,
+		FULL_COLUMN_COUNT = 18,
 		COLUMN_RELATION_COUNT = 13,
 		FIRST_GROUP_NAME = 'Group 1',
 		ACTIVE_COUNT = 10,
@@ -29,10 +30,11 @@ abstract class DataSourceTestCase extends TestCase
 		LIMIT = 5,
 		OFFSET = 2;
 
-	static public $credentials = [
-		'user' => 'root',
-		'password' => '',
-	];
+	protected $config = [];
+
+	protected $configFile;
+
+	protected $localConfigFile;
 
 	private $pairs = [
 		'1' => 'John',
@@ -64,9 +66,13 @@ abstract class DataSourceTestCase extends TestCase
 
 	public function __construct()
 	{
+		$configFile = $this->configFile ? $this->configFile : __DIR__ . '/../config.php';
+		$localConfigFile = $this->localConfigFile ? $this->localConfigFile : __DIR__ . '/../config.local.php';
+		$this->config = is_file($localConfigFile) ? require_once $localConfigFile : $configFile;
+
 		$this->databaseFactory = new DatabaseFactory(
-			'127.0.0.1', self::$credentials['user'],
-			self::$credentials['password'], 'mesour_sources_'
+			'127.0.0.1', $this->config['database']['username'],
+			$this->config['database']['password'], 'mesour_sources_'
 		);
 		$this->baseConnection = $this->databaseFactory->create();
 	}
@@ -76,16 +82,164 @@ abstract class DataSourceTestCase extends TestCase
 		$this->databaseFactory->destroy($this->baseConnection);
 	}
 
-	private function getOwnPrimaryKey(ISource $source)
+	protected function assertDataStructure(ISource $source, array $tableNames, $table = 'users')
 	{
-		return $source instanceof DoctrineSource ? self::OWN_PRIMARY_KEY_DOCTRINE : self::OWN_PRIMARY_KEY;
+		Assert::same(self::OWN_PRIMARY_KEY, $source->getDataStructure()->getPrimaryKey());
+		Assert::same($table, $source->getDataStructure()->getName());
+
+		$expectedColumns = $this->getUserExpectedColumns();
+
+		foreach ($expectedColumns as $name => $options) {
+			$column = $source->getDataStructure()->getColumn($name);
+			Assert::same($options['type'], $column->getType());
+			if ($options['type'] === IColumnStructure::ENUM) {
+				Assert::same($options['values'], $column->getValues());
+			}
+		}
+
+
+		$expectedGroupColumns = $this->getGroupExpectedColumns();
+		$expectedAddressColumns = $this->getAddressExpectedColumns();
+		$expectedCompanyColumns = $this->getCompanyExpectedColumns();
+		$userCompaniesColumns = $this->getUserCompaniesExpectedColumns();
+
+		foreach ($tableNames as $currentTableName) {
+			$tableStructure = $source->getDataStructure()->getTableStructure($currentTableName);
+
+			$expected = [];
+			if ($tableStructure->getName() === $tableNames[0]) {
+				$expected = $expectedGroupColumns;
+			} elseif ($tableStructure->getName() === $tableNames[1]) {
+				$expected = $expectedAddressColumns;
+			} elseif ($tableStructure->getName() === $tableNames[2]) {
+				$expected = $expectedCompanyColumns;
+			} elseif (isset($tableNames[3]) && $tableStructure->getName() === $tableNames[3]) {
+				$expected = $userCompaniesColumns;
+			}
+
+			foreach ($expected as $name => $options) {
+				$column = $tableStructure->getColumn($name);
+				Assert::same($options['type'], $column->getType(), 'For column ' . $name);
+				if ($options['type'] === IColumnStructure::ENUM) {
+					Assert::same($options['values'], $column->getValues());
+				}
+			}
+		}
 	}
 
-	protected function matchPrimaryKey(ISource $source)
+	protected function getUserExpectedColumns()
 	{
-		Assert::same(self::DEFAULT_PRIMARY_KEY, $source->getPrimaryKey());
-		$source->setPrimaryKey($this->getOwnPrimaryKey($source));
-		Assert::same($this->getOwnPrimaryKey($source), $source->getPrimaryKey());
+		return [
+			'id' => [
+				'type' => IColumnStructure::NUMBER,
+			], 'action' => [
+				'type' => IColumnStructure::NUMBER,
+			], 'group_id' => [
+				'type' => IColumnStructure::NUMBER,
+			], 'role' => [
+				'type' => IColumnStructure::ENUM,
+				'values' => ['admin', 'moderator'],
+			], 'name' => [
+				'type' => IColumnStructure::TEXT,
+			], 'surname' => [
+				'type' => IColumnStructure::TEXT,
+			], 'email' => [
+				'type' => IColumnStructure::TEXT,
+			], 'last_login' => [
+				'type' => IColumnStructure::DATE,
+			], 'amount' => [
+				'type' => IColumnStructure::NUMBER,
+			], 'avatar' => [
+				'type' => IColumnStructure::TEXT,
+			], 'order' => [
+				'type' => IColumnStructure::NUMBER,
+			], 'timestamp' => [
+				'type' => IColumnStructure::NUMBER,
+			], 'has_pro' => [
+				'type' => IColumnStructure::BOOL,
+			],
+		];
+	}
+
+	protected function getGroupExpectedColumns()
+	{
+		return [
+			'id' => [
+				'type' => IColumnStructure::NUMBER,
+			],
+			'name' => [
+				'type' => IColumnStructure::TEXT,
+			],
+			'type' => [
+				'type' => IColumnStructure::ENUM,
+				'values' => ['first', 'second'],
+			],
+			'date' => [
+				'type' => IColumnStructure::DATE,
+			],
+			'members' => [
+				'type' => IColumnStructure::NUMBER,
+			],
+		];
+	}
+
+	protected function getAddressExpectedColumns()
+	{
+		return [
+			'id' => [
+				'type' => IColumnStructure::NUMBER,
+			],
+			'user_id' => [
+				'type' => IColumnStructure::NUMBER,
+			],
+			'street' => [
+				'type' => IColumnStructure::TEXT,
+			],
+			'city' => [
+				'type' => IColumnStructure::TEXT,
+			],
+			'zip' => [
+				'type' => IColumnStructure::TEXT,
+			],
+			'country' => [
+				'type' => IColumnStructure::TEXT,
+			],
+		];
+	}
+
+	protected function getUserCompaniesExpectedColumns()
+	{
+		return [
+			'company_id' => [
+				'type' => IColumnStructure::NUMBER,
+			],
+			'user_id' => [
+				'type' => IColumnStructure::NUMBER,
+			],
+		];
+	}
+
+	protected function getCompanyExpectedColumns()
+	{
+		return [
+			'id' => [
+				'type' => IColumnStructure::NUMBER,
+			],
+			'name' => [
+				'type' => IColumnStructure::TEXT,
+			],
+			'reg_num' => [
+				'type' => IColumnStructure::TEXT,
+			],
+			'verified' => [
+				'type' => IColumnStructure::BOOL,
+			],
+		];
+	}
+
+	protected function matchPrimaryKey(ISource $source, $current = self::OWN_PRIMARY_KEY)
+	{
+		Assert::same($current, $source->getPrimaryKey());
 	}
 
 	protected function matchTotalCount(ISource $source)
@@ -101,7 +255,7 @@ abstract class DataSourceTestCase extends TestCase
 
 	protected function matchPairs(ISource $source)
 	{
-		Assert::same($this->pairs, $source->fetchPairs($this->getOwnPrimaryKey($source), 'name'));
+		Assert::same($this->pairs, $source->fetchPairs(self::OWN_PRIMARY_KEY, 'name'));
 	}
 
 	protected function matchOffset(ISource $source)
@@ -109,7 +263,7 @@ abstract class DataSourceTestCase extends TestCase
 		$source->applyLimit(self::LIMIT, self::OFFSET);
 		$all_data = $this->assertLimit($source);
 		$first_user = reset($all_data);
-		Assert::equal((string)(self::OFFSET + 1), (string)$first_user[$this->getOwnPrimaryKey($source)]);
+		Assert::equal((string)(self::OFFSET + 1), (string)$first_user[self::OWN_PRIMARY_KEY]);
 	}
 
 	protected function matchWhere(ISource $source, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT)

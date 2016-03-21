@@ -3,29 +3,22 @@
 define('SRC_DIR', __DIR__ . '/../src/');
 define('DISABLE_AUTOLOAD', true);
 
+@mkdir(__DIR__ . "/log");
+@mkdir(__DIR__ . "/tmp");
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
-require_once SRC_DIR . 'Mesour/Sources/BaseSource.php';
-require_once SRC_DIR . 'Mesour/Sources/ArrayHash.php';
-require_once SRC_DIR . 'Mesour/Sources/ISource.php';
-require_once SRC_DIR . 'Mesour/Sources/ArraySource.php';
-require_once SRC_DIR . 'Mesour/Sources/NetteDbSource.php';
-require_once SRC_DIR . 'Mesour/Sources/DoctrineSource.php';
-require_once SRC_DIR . 'Mesour/Sources/exceptions.php';
-
-require_once __DIR__ . '/Entity/EmptyTable.php';
-require_once __DIR__ . '/Entity/User.php';
-require_once __DIR__ . '/Entity/Groups.php';
-
-require_once __DIR__ . '/classes/Connection.php';
-require_once __DIR__ . '/classes/DatabaseFactory.php';
+$loader = new Nette\Loaders\RobotLoader;
+$loader->addDirectory(__DIR__ . '/../src');
+$loader->addDirectory(__DIR__ . '/classes');
+$loader->addDirectory(__DIR__ . '/Entity');
+$loader->setCacheStorage(new Nette\Caching\Storages\FileStorage(__DIR__ . '/tmp'));
+$loader->register();
 
 if (!class_exists('Tester\Assert')) {
 	echo "Install Nette Tester using `composer update --dev`\n";
 	exit(1);
 }
-@mkdir(__DIR__ . "/log");
-@mkdir(__DIR__ . "/tmp");
 
 define("TEMP_DIR", __DIR__ . "/tmp/");
 

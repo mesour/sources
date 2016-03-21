@@ -17,15 +17,14 @@ interface ISource
 {
 
 	/**
-	 * @param $primary_key
-	 * @return static
+	 * @return string
 	 */
-	public function setPrimaryKey($primary_key);
+	public function getPrimaryKey();
 
 	/**
 	 * @return string
 	 */
-	public function getPrimaryKey();
+	public function getTableName();
 
 	/**
 	 * Get total count without apply where and limit
@@ -97,26 +96,20 @@ interface ISource
 	public function orderBy($row, $sorting = 'ASC');
 
 	/**
-	 * @param $columnAlias
-	 * @param $table
-	 * @param $column
-	 * @param $primaryKey
-	 * @return static
-	 * @throws Exception
+	 * @return Structures\DataStructure
 	 */
-	public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id');
+	public function getDataStructure();
+
+	public function setDataStructure(Structures\ITableStructure $dataStructure);
+
+	public function addTableToStructure($table, $primaryKey);
 
 	/**
-	 * @param $table
-	 * @return string
+	 * @param string $table
+	 * @param bool $internal
+	 * @return array
 	 */
-	public function getReference($columnAlias);
-
-	/**
-	 * @param $table
-	 * @return bool
-	 */
-	public function hasReference($table);
+	public function getTableColumns($table, $internal = false);
 
 	/**
 	 * @param $table
@@ -125,12 +118,32 @@ interface ISource
 	public function getReferencedSource($table);
 
 	/**
-	 * @return array
+	 * @deprecated
+	 */
+	public function setPrimaryKey($primary_key);
+
+	/**
+	 * @deprecated
+	 */
+	public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id');
+
+	/**
+	 * @deprecated
+	 */
+	public function getReference($columnAlias);
+
+	/**
+	 * @deprecated
+	 */
+	public function hasReference($table);
+
+	/**
+	 * @deprecated
 	 */
 	public function getReferencedTables();
 
 	/**
-	 * @return array
+	 * @deprecated
 	 */
 	public function getReferenceSettings();
 
