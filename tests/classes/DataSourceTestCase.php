@@ -68,7 +68,7 @@ abstract class DataSourceTestCase extends TestCase
 	{
 		$configFile = $this->configFile ? $this->configFile : __DIR__ . '/../config.php';
 		$localConfigFile = $this->localConfigFile ? $this->localConfigFile : __DIR__ . '/../config.local.php';
-		$this->config = is_file($localConfigFile) ? require_once $localConfigFile : $configFile;
+		$this->config = is_file($localConfigFile) ? require_once $localConfigFile : require_once $configFile;
 
 		$this->databaseFactory = new DatabaseFactory(
 			'127.0.0.1', $this->config['database']['username'],
