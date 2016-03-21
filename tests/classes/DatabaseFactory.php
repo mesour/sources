@@ -7,81 +7,81 @@ use Nette;
 class DatabaseFactory extends Nette\Object
 {
 
-    private $host;
+	private $host;
 
-    private $username;
+	private $username;
 
-    private $password;
+	private $password;
 
-    private $prefix;
+	private $prefix;
 
-    private $databaseName;
+	private $databaseName;
 
-    public function __construct($host, $username, $password, $prefix)
-    {
-        $this->host = $host;
-        $this->username = $username;
-        $this->password = $password;
-        $this->prefix = $prefix;
-    }
+	public function __construct($host, $username, $password, $prefix)
+	{
+		$this->host = $host;
+		$this->username = $username;
+		$this->password = $password;
+		$this->prefix = $prefix;
+	}
 
-    /**
-     * @return Connection
-     */
-    public function create()
-    {
-        $connection = new Connection($this->getDsn(), $this->username, $this->password);
+	/**
+	 * @return Connection
+	 */
+	public function create()
+	{
+		$connection = new Connection($this->getDsn(), $this->username, $this->password);
 
-        $this->databaseName = $this->getRandomDbName();
+		$this->databaseName = $this->getRandomDbName();
 
-        $connection->query('CREATE DATABASE ' . $this->databaseName . ' DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci');
+		$connection->query('CREATE DATABASE ' . $this->databaseName . ' DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci');
 
-        $connection->disconnect();
+		$connection->disconnect();
 
-        $dbConnection = new Connection($this->getDsnWithDatabase($this->databaseName), $this->username, $this->password);
+		$dbConnection = new Connection($this->getDsnWithDatabase($this->databaseName), $this->username, $this->password);
 
-        $dbConnection->query(file_get_contents(__DIR__ . '/../data/scheme.sql'));
+		$dbConnection->query(file_get_contents(__DIR__ . '/../data/scheme.sql'));
 
-        return $dbConnection;
-    }
+		return $dbConnection;
+	}
 
-    public function destroy(Connection $connection)
-    {
-        $exploded = explode('dbname=', $connection->getDsn());
-        $dbName = end($exploded);
+	public function destroy(Connection $connection)
+	{
+		$exploded = explode('dbname=', $connection->getDsn());
+		$dbName = end($exploded);
 
-        $connection->query('DROP DATABASE ' . $dbName);
-        $connection->disconnect();
-    }
+		$connection->query('DROP DATABASE ' . $dbName);
+		$connection->disconnect();
+	}
 
-    private function getDsn()
-    {
-        return "mysql:host=" . $this->host;
-    }
+	private function getDsn()
+	{
+		return "mysql:host=" . $this->host;
+	}
 
-    public function getUserName()
-    {
-        return $this->username;
-    }
+	public function getUserName()
+	{
+		return $this->username;
+	}
 
-    public function getPassword()
-    {
-        return $this->password;
-    }
+	public function getPassword()
+	{
+		return $this->password;
+	}
 
-    public function getDatabaseName()
-    {
-        return $this->databaseName;
-    }
+	public function getDatabaseName()
+	{
+		return $this->databaseName;
+	}
 
-    private function getDsnWithDatabase($dbName)
-    {
-        return $this->getDsn() . ";dbname=" . $dbName;
-    }
+	private function getDsnWithDatabase($dbName)
+	{
+		return $this->getDsn() . ";dbname=" . $dbName;
+	}
 
-    private function getRandomDbName()
-    {
-        return $this->prefix . Nette\Utils\Random::generate();
-    }
+	private function getRandomDbName()
+	{
+		return $this->prefix . Nette\Utils\Random::generate();
+	}
 
 }

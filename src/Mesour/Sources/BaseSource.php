@@ -10,7 +10,7 @@
 namespace Mesour\Sources;
 
 use Mesour;
-
+use Mesour\Sources\Structures;
 
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
@@ -18,137 +18,184 @@ use Mesour;
 abstract class BaseSource implements ISource
 {
 
-    private $primaryKey = 'id';
+	/**
+	 * @var Structures\DataStructure
+	 */
+	protected $dataStructure;
 
-    private $references = [];
+	private $referencedSources = [];
 
-    private $referencedTables = [];
+	/** @var null|array */
+	protected $lastFetchAllResult = null;
 
-    private $referencedSources = [];
+	public function __construct($tableName, $primaryKey)
+	{
+		$this->initializeDataStructure($tableName, $primaryKey);
+	}
 
-    /** @var null|array */
-    protected $lastFetchAllResult = null;
+	/**
+	 * @return Structures\DataStructure
+	 */
+	public function getDataStructure()
+	{
+		return $this->dataStructure;
+	}
 
-    /**
-     * Get raw data from last fetchAll()
-     *
-     * IMPORTANT! fetchAll() must be called before call this method
-     *
-     * @return mixed
-     * @throws InvalidStateException
-     */
-    public function fetchLastRawRows()
-    {
-        if (is_null($this->lastFetchAllResult)) {
-            throw new InvalidStateException('Must call fetchAll() before call fetchLastRawRows() method.');
-        }
-        return $this->lastFetchAllResult;
-    }
+	/**
+	 * Get raw data from last fetchAll()
+	 *
+	 * IMPORTANT! fetchAll() must be called before call this method
+	 *
+	 * @return mixed
+	 * @throws InvalidStateException
+	 */
+	public function fetchLastRawRows()
+	{
+		if (is_null($this->lastFetchAllResult)) {
+			throw new InvalidStateException('Must call fetchAll() before call fetchLastRawRows() method.');
+		}
+		return $this->lastFetchAllResult;
+	}
 
-    public function setPrimaryKey($primaryKey)
-    {
-        $this->primaryKey = $primaryKey;
-        return $this;
-    }
+	public function getPrimaryKey()
+	{
+		return $this->getDataStructure()->getPrimaryKey();
+	}
 
-    public function getPrimaryKey()
-    {
-        return $this->primaryKey;
-    }
+	/**
+	 * @return string
+	 */
+	public function getTableName()
+	{
+		return $this->getDataStructure()->getName();
+	}
 
-    public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id')
-    {
-        if (!isset($this->references[$columnAlias])) {
-            $this->addReferencedTable($table, $primaryKey);
-            $this->references[$columnAlias] = [
-                'table' => $table,
-                'column' => $referencedColumn,
-                'primary' => $primaryKey,
-            ];
-        } else {
-            throw new InvalidArgumentException('Reference for this column alias already exist.');
-        }
+	/**
+	 * @param $table
+	 * @return static
+	 * @throws InvalidArgumentException
+	 */
+	public function getReferencedSource($table, $callback = null)
+	{
+		if (isset($this->referencedSources[$table])) {
+			return $this->referencedSources[$table];
+		}
 
-        return $this;
-    }
+		if (!$this->getDataStructure()->hasTableStructure($table)) {
+			throw new InvalidArgumentException('Table structure ' . $table . ' does not exists.');
+		}
+		if (!is_callable($callback)) {
+			throw new InvalidArgumentException(
+				sprintf('Second parameter must be callable callback. %s given.', $callback)
+			);
+		}
 
-    /**
-     * @param $table
-     * @return bool
-     */
-    public function getReference($columnAlias)
-    {
-        if (!isset($this->references[$columnAlias])) {
-            throw new InvalidArgumentException(
-                sprintf('Reference for column alias %s does not exist.', $columnAlias)
-            );
-        }
-        return $this->references[$columnAlias];
-    }
+		$source = call_user_func($callback);
+		if (!$source instanceof ISource) {
+			throw new InvalidArgumentException(
+				sprintf('Callback must return instance of %s. %s given.', ISource::class, $callback)
+			);
+		}
+		$this->referencedSources[$table] = $source;
 
-    public function getReferencedTables()
-    {
-        return $this->referencedTables;
-    }
+		return $source;
+	}
 
-    /**
-     * @param $table
-     * @return static
-     * @throws InvalidArgumentException
-     */
-    public function getReferencedSource($table, $callback = null)
-    {
-        if (isset($this->referencedSources[$table])) {
-            return $this->referencedSources[$table];
-        }
+	public function setDataStructure(Structures\ITableStructure $dataStructure)
+	{
+		$this->dataStructure = $dataStructure;
+		if($dataStructure instanceof Structures\IDataStructure) {
+			$this->dataStructure->setSource($this);
+		}
+		return $this;
+	}
 
-        if (!$this->hasReference($table)) {
-            throw new InvalidArgumentException('Relation ' . $table . ' does not exists.');
-        }
-        if (!is_callable($callback)) {
-            throw new InvalidArgumentException(
-                sprintf('Second parameter must be callable callback. %s given.', $callback)
-            );
-        }
+	public function getTableColumns($table, $internal = false)
+	{
+		if (
+			!$internal
+			&& ($this->getDataStructure()->hasTableStructure($table) || $table === $this->getTableName())
+		) {
+			if($table === $this->getTableName()) {
+				$columns = $this->getDataStructure()->getColumns();
+			} else {
+				$columns = $this->getDataStructure()->getTableStructure($table)->getColumns();
+			}
+			if (count($columns) > 0) {
+				return Helpers::getColumnsArrayFromStructure($columns);
+			}
+		}
+		return [];
+	}
 
-        $source = call_user_func($callback);
-        if (!$source instanceof ISource) {
-            throw new InvalidArgumentException(
-                sprintf('Callback must return instance of %s. %s given.', Isource::class, $callback)
-            );
-        }
-        $this->referencedSources[$table] = $source;
-        $source->setPrimaryKey($this->referencedTables[$table]);
+	public function addTableToStructure($table, $primaryKey)
+	{
+		return $this->getDataStructure()->getOrCreateTableStructure($table, $primaryKey);
+	}
 
-        return $source;
-    }
+	protected function makeArrayHash(array $val)
+	{
+		return ArrayHash::from($val);
+	}
 
-    /**
-     * @return array
-     */
-    public function getReferenceSettings()
-    {
-        return $this->references;
-    }
+	protected function initializeDataStructure($tableName, $primaryKey)
+	{
+		$dataStructure = new Structures\DataStructure($tableName, $primaryKey);
 
-    /**
-     * @param $table
-     * @return bool
-     */
-    public function hasReference($table)
-    {
-        return isset($this->referencedTables[$table]);
-    }
+		$this->setDataStructure($dataStructure);
+	}
 
-    protected function addReferencedTable($table, $primaryKey = 'id')
-    {
-        $this->referencedTables[$table] = $primaryKey;
-        return $this;
-    }
+	/**
+	 * @deprecated
+	 */
+	public function setPrimaryKey($primaryKey)
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
+		return $this;
+	}
 
-    protected function makeArrayHash(array $val)
-    {
-        return ArrayHash::from($val);
-    }
+	/**
+	 * @deprecated
+	 */
+	public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id')
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
+		return $this;
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function getReferenceSettings()
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
+		return [];
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function hasReference($table)
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
+		return false;
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function getReferencedTables()
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
+		return [];
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function getReference($columnAlias)
+	{
+		trigger_error('Method set primary key is deprecated, use DataStructure.', E_USER_DEPRECATED);
+	}
 
 }

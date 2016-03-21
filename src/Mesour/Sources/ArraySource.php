@@ -10,7 +10,7 @@
 namespace Mesour\Sources;
 
 use Mesour;
-
+use Mesour\Sources\Structures\Columns;
 
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
@@ -18,221 +18,275 @@ use Mesour;
 class ArraySource extends BaseSource
 {
 
-    const DATE = 'date';
+	const DATE = 'date';
 
-    const _DATE_MARK = '__date_';
+	const _DATE_MARK = '__date_';
 
-    /** @var Mesour\ArrayManage\Searcher\Select */
-    protected $select;
+	/** @var Mesour\ArrayManage\Searcher\Select */
+	protected $select;
 
-    protected $referencedData = [];
+	protected $referencedData = [];
 
-    protected $dataArr = [];
+	protected $dataArr = [];
 
-    protected $structure = [];
+	/**
+	 * @param array $data
+	 * @param array $relations
+	 * @throws MissingRequiredException
+	 */
+	public function __construct($tableName, $primaryKey, array $data = [], array $referencedData = [])
+	{
+		parent::__construct($tableName, $primaryKey);
 
-    /**
-     * @param array $data
-     * @param array $relations
-     * @throws MissingRequiredException
-     */
-    public function __construct(array $data, array $referencedData = [])
-    {
-        if (!class_exists(Mesour\ArrayManage\Searcher\Select::class)) {
-            throw new MissingRequiredException('Array data source required composer package "mesour/array-manager".');
-        }
-        $this->dataArr = $data;
-        $this->referencedData = $referencedData;
-    }
+		if (!class_exists(Mesour\ArrayManage\Searcher\Select::class)) {
+			throw new MissingRequiredException('Array data source required composer package "mesour/array-manager".');
+		}
+		$this->dataArr = $data;
+		$this->referencedData = $referencedData;
+	}
 
-    /**
-     * Get array data count
-     *
-     * @return int
-     */
-    public function getTotalCount()
-    {
-        return $this->getSelect()->getTotalCount();
-    }
+	/**
+	 * Get array data count
+	 *
+	 * @return int
+	 */
+	public function getTotalCount()
+	{
+		return $this->getSelect()->getTotalCount();
+	}
 
-    public function where($column, $value = null, $condition = null, $operator = 'and')
-    {
-        if (isset($this->structure[$column]) && $this->structure[$column] === self::DATE) {
-            $value = $this->fixDate($value);
-            $column = self::_DATE_MARK . $column;
-        }
+	public function where($column, $value = null, $condition = null, $operator = 'and')
+	{
+		if (
+			$this->getDataStructure()->hasColumn($column)
+			&& $this->getDataStructure()->getColumn($column)->getType() === Columns\IColumnStructure::DATE
+		) {
+			$value = $this->fixDate($value);
+			$column = self::_DATE_MARK . $column;
+		}
 
-        $this->getSelect()->where($column, $value, $condition, $operator);
+		$this->getSelect()->where($column, $value, $condition, $operator);
 
-        return $this;
-    }
+		return $this;
+	}
 
-    static public function fixDate($date)
-    {
-        return is_numeric($date) ? $date : strtotime($date);
-    }
+	static public function fixDate($date)
+	{
+		return is_numeric($date) ? $date : strtotime($date);
+	}
 
-    /**
-     * Apply limit and offset
-     *
-     * @param int $limit
-     * @param int $offset
-     */
-    public function applyLimit($limit, $offset = 0)
-    {
-        $this->getSelect()->limit($limit);
-        $this->getSelect()->offset($offset);
-    }
+	/**
+	 * Apply limit and offset
+	 *
+	 * @param int $limit
+	 * @param int $offset
+	 */
+	public function applyLimit($limit, $offset = 0)
+	{
+		$this->getSelect()->limit($limit);
+		$this->getSelect()->offset($offset);
+	}
 
-    /**
-     * Get count after applied where
-     *
-     * @return int
-     */
-    public function count()
-    {
-        return $this->getSelect()->count();
-    }
+	/**
+	 * Get count after applied where
+	 *
+	 * @return int
+	 */
+	public function count()
+	{
+		return $this->getSelect()->count();
+	}
 
-    /**
-     * Get searched values with applied limit, offset and where
-     *
-     * @return ArrayHash[]
-     */
-    public function fetchAll()
-    {
-        $out = $this->getSelect()->fetchAll();
-        if (count($this->structure) > 0) {
-            foreach ($out as $key => $val) {
-                $this->removeStructureDate($out[$key]);
-            }
-        }
-        foreach ($out as $key => $val) {
-            $out[$key] = $this->makeArrayHash($val);
-        }
-        $this->lastFetchAllResult = $out;
+	/**
+	 * Get searched values with applied limit, offset and where
+	 *
+	 * @return ArrayHash[]
+	 */
+	public function fetchAll()
+	{
+		$out = $this->getSelect()->fetchAll();
+		foreach ($out as $key => $val) {
+			$this->removeStructureDate($out[$key]);
+		}
+		foreach ($out as $key => $val) {
+			$out[$key] = $this->makeArrayHash($val);
+		}
+		$this->lastFetchAllResult = $out;
 
-        return $out;
-    }
+		return $out;
+	}
 
-    public function orderBy($row, $sorting = 'ASC')
-    {
-        $this->getSelect()->orderBy($row, $sorting);
-    }
+	public function orderBy($row, $sorting = 'ASC')
+	{
+		$this->getSelect()->orderBy($row, $sorting);
+	}
 
-    /**
-     * Return first element from data
-     *
-     * @return ArrayHash|FALSE
-     */
-    public function fetch()
-    {
-        $data = $this->getSelect()->fetch();
-        if (!$data) {
-            return false;
-        }
-        if (count($this->structure) > 0) {
-            $this->removeStructureDate($data);
-        }
+	/**
+	 * Return first element from data
+	 *
+	 * @return ArrayHash|FALSE
+	 */
+	public function fetch()
+	{
+		$data = $this->getSelect()->fetch();
+		if (!$data) {
+			return false;
+		}
+		$this->removeStructureDate($data);
 
-        return $this->makeArrayHash($data);
-    }
+		return $this->makeArrayHash($data);
+	}
 
-    /**
-     * @param string $key
-     * @param string $value
-     * @return array
-     */
-    public function fetchPairs($key, $value)
-    {
-        $data = $this->getSelect()->column($key)->column($value)
-            ->fetchAll();
+	/**
+	 * @param string $key
+	 * @param string $value
+	 * @return array
+	 */
+	public function fetchPairs($key, $value)
+	{
+		$data = $this->getSelect()->column($key)->column($value)
+			->fetchAll();
 
-        $output = [];
-        foreach ($data as $item) {
-            $output[$item[$key]] = $item[$value];
-        }
+		$output = [];
+		foreach ($data as $item) {
+			$output[$item[$key]] = $item[$value];
+		}
 
-        return $output;
-    }
+		return $output;
+	}
 
-    public function setStructure(array $structure)
-    {
-        $this->structure = $structure;
+	public function joinField($table, $key, $column, $columnAlias, $left = false)
+	{
+		$source = $this->getReferencedSource($table);
+		foreach ($this->dataArr as $_key => $item) {
+			/** @var ISource $currentSource */
+			$currentSource = clone $source;
+			$item_name = is_string($columnAlias) ? $columnAlias : $column;
+			if (isset($item[$key])) {
+				$_item = $currentSource
+					->where($source->getPrimaryKey(), $item[$key], Mesour\ArrayManage\Searcher\Condition::EQUAL)
+					->fetch();
+				if (isset($_item[$column])) {
+					$this->dataArr[$_key][$item_name] = $_item[$column];
+				} else {
+					$this->dataArr[$_key][$item_name] = null;
+				}
+				$this->select = null;
+			} elseif ($left) {
+				$this->dataArr[$_key][$item_name] = null;
+			} else {
+				throw new Exception('Column ' . $key . ' does not exist in data array.');
+			}
+			unset($currentSource);
+		}
 
-        return $this;
-    }
+		return $this;
+	}
+	
+	public function attachTable($table, $key, $columnAlias, $left = false)
+	{
+		$source = $this->getReferencedSource($table);
+		foreach ($this->dataArr as $_key => $item) {
+			/** @var ISource $currentSource */
+			$currentSource = clone $source;
+			if (isset($item[$this->getPrimaryKey()])) {
+				$_items = $currentSource
+					->where($key, $item[$this->getPrimaryKey()], Mesour\ArrayManage\Searcher\Condition::EQUAL)
+					->fetchAll();
+				
+				$this->dataArr[$_key][$columnAlias] = $_items;
+			} elseif ($left) {
+				$this->dataArr[$_key][$columnAlias] = [];
+			} else {
+				throw new Exception('Column ' . $key . ' does not exist in data array.');
+			}
+			unset($currentSource);
+		}
 
-    public function join($table, $key, $column, $columnAlias, $primaryKey = 'id', $left = false)
-    {
-        $this->setReference($columnAlias, $table, $column, $primaryKey);
+		return $this;
+	}
+	
+	public function attachManyTable(Columns\ManyToManyColumnStructure $columnStructure, $left = false)
+	{
+		$source = $this->getReferencedSource($columnStructure->getReferencedTable());
+		foreach ($this->dataArr as $_key => $item) {
+			/** @var ISource $currentSource */
+			$currentSource = clone $source;
+			if (isset($item[$this->getPrimaryKey()])) {
+				$_items = $currentSource
+					->where($columnStructure->getReferencedColumn(), $item[$this->getPrimaryKey()], Mesour\ArrayManage\Searcher\Condition::EQUAL)
+					->fetchAll();
 
-        $source = $this->getReferencedSource($table);
-        foreach ($this->dataArr as $_key => $item) {
-            /** @var ISource $currentSource */
-            $currentSource = clone $source;
-            $item_name = is_string($columnAlias) ? $columnAlias : $column;
-            if (isset($item[$key])) {
-                $_item = $currentSource
-                    ->where($source->getPrimaryKey(), $item[$key], Mesour\ArrayManage\Searcher\Condition::EQUAL)
-                    ->fetch();
-                if (isset($_item[$column])) {
-                    $this->dataArr[$_key][$item_name] = $_item[$column];
-                } else {
-                    $this->dataArr[$_key][$item_name] = null;
-                }
-                $this->select = null;
-            } elseif ($left) {
-                $this->dataArr[$_key][$item_name] = null;
-            } else {
-                throw new Exception('Column ' . $key . ' does not exist in data array.');
-            }
-            unset($currentSource);
-        }
+				$itemSource = $this->getReferencedSource($columnStructure->getTableStructure()->getName());
+				foreach ($_items as $current) {
+					$itemSource->where(
+						$columnStructure->getTableStructure()->getPrimaryKey(),
+						$current[$columnStructure->getSelfColumn()],
+						Mesour\ArrayManage\Searcher\Condition::EQUAL,
+						'or'
+					);
+				}
+				
+				$this->dataArr[$_key][$columnStructure->getName()] = $itemSource->fetchAll();
+			} elseif ($left) {
+				$this->dataArr[$_key][$columnStructure->getName()] = [];
+			} else {
+				throw new Exception('Primary column ' . $this->getPrimaryKey() . ' not exists in data array.');
+			}
+			unset($currentSource);
+		}
 
-        return $this;
-    }
+		return $this;
+	}
 
-    public function getReferencedSource($table, $callback = null)
-    {
-        return parent::getReferencedSource($table, $callback ? $callback : function () use ($table) {
-            return new static($this->referencedData[$table]);
-        });
-    }
+	public function getReferencedSource($table, $callback = null)
+	{
+		return parent::getReferencedSource(
+			$table,
+			$callback ? $callback : function () use ($table) {
+				if (!isset($this->referencedData[$table])) {
+					throw new InvalidStateException('Array with key does not exists in secon __construct parameter.');
+				}
+				$tableStructure = $this->getDataStructure()->getTableStructure($table);
+				return new static(
+					$tableStructure->getName(),
+					$tableStructure->getPrimaryKey(),
+					$this->referencedData[$table]
+				);
+			}
+		);
+	}
 
+	/**
+	 * @return Mesour\ArrayManage\Searcher\Select
+	 * @throws Exception
+	 */
+	protected function getSelect()
+	{
+		if (!$this->select) {
+			foreach ($this->getDataStructure()->getColumns() as $column) {
+				if ($column->getType() === Columns\IColumnStructure::DATE) {
+					foreach ($this->dataArr as $key => $item) {
+						if (!array_key_exists($column->getName(), $item)) {
+							throw new Exception('Column ' . $column->getName() . ' does not exists in source array.');
+						}
+						$this->dataArr[$key][self::_DATE_MARK . $column->getName()] = $this->fixDate($item[$column->getName()]);
+					}
+				}
+			}
+			$this->select = new Mesour\ArrayManage\Searcher\Select($this->dataArr);
+		}
 
-    /**
-     * @return Mesour\ArrayManage\Searcher\Select
-     * @throws Exception
-     */
-    protected function getSelect()
-    {
-        if (!$this->select) {
-            if (count($this->structure)) {
-                foreach ($this->structure as $name => $value) {
-                    if ($value === self::DATE) {
-                        foreach ($this->dataArr as $key => $item) {
-                            if (!array_key_exists($name, $item)) {
-                                throw new Exception('Column ' . $name . ' does not exists in source array.');
-                            }
-                            $this->dataArr[$key][self::_DATE_MARK . $name] = $this->fixDate($item[$name]);
-                        }
-                    }
-                }
-            }
-            $this->select = new Mesour\ArrayManage\Searcher\Select($this->dataArr);
-        }
+		return $this->select;
+	}
 
-        return $this->select;
-    }
-
-    protected function removeStructureDate(&$out)
-    {
-        foreach ($this->structure as $name => $type) {
-            if ($type === self::DATE) {
-                unset($out[self::_DATE_MARK . $name]);
-            }
-        }
-    }
+	protected function removeStructureDate(&$out)
+	{
+		foreach ($this->getDataStructure()->getColumns() as $column) {
+			if ($column->getType() === Columns\IColumnStructure::DATE) {
+				unset($out[self::_DATE_MARK . $column->getName()]);
+			}
+		}
+	}
 
 }

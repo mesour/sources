@@ -3,182 +3,162 @@
 namespace Mesour\Sources\Tests;
 
 
-use Doctrine\ORM\Query\Expr\Join;
+use Doctrine\DBAL\Types\StringType;
 use Mesour\Sources\DoctrineSource;
-use Mesour\Sources\Exception;
+use Doctrine\ORM\Tools\Setup;
+use Doctrine\ORM\EntityManager;
+use Doctrine\Common\Annotations\AnnotationReader;
 use Mesour\Sources\InvalidStateException;
+use Mesour\Sources\Tests\Entity\Company;
+use Mesour\Sources\Tests\Entity\EmptyTable;
+use Mesour\Sources\Tests\Entity\Group;
 use Mesour\Sources\Tests\Entity\User;
+use Mesour\Sources\Tests\Entity\UserAddress;
 use Tester\Assert;
-use Mesour\Sources\Tests\Entity\Groups;
 
 abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 {
 
-    /** @var \Doctrine\ORM\EntityManager */
-    protected $entityManager;
+	/** @var \Doctrine\ORM\EntityManager */
+	protected $entityManager;
 
-    /** @var \Doctrine\ORM\QueryBuilder */
-    protected $user;
+	/** @var \Doctrine\ORM\QueryBuilder */
+	protected $user;
 
-    /** @var \Doctrine\ORM\QueryBuilder */
-    protected $empty;
+	/** @var \Doctrine\ORM\QueryBuilder */
+	protected $empty;
 
-    protected $primaryKey = 'userId';
+	protected $columnMapping = [
+		'id' => 'u.id',
+		'group_id' => 'u.groups',
+		'last_login' => 'u.lastLogin',
+		'group_name' => 'g.name',
+		'group_type' => 'g.type',
+		'group_date' => 'g.date',
+	];
 
-    protected $columnMapping = [
-        'userId' => 'u.userId',
-        'group_id' => 'u.groups',
-        'last_login' => 'u.lastLogin',
-        'groupName' => 'g.name',
-        'groupType' => 'g.type',
-    ];
+	public function __construct($entityDir = null)
+	{
+		parent::__construct();
 
-    public function __construct($entityDir = null)
-    {
-        parent::__construct();
+		$isDevMode = false;
 
-        if (!$entityDir) {
-            // settings for next required file
-            $conn = [
-                'driver' => 'pdo_mysql',
-                'user' => $this->databaseFactory->getUserName(),
-                'password' => $this->databaseFactory->getPassword(),
-                'dbname' => $this->databaseFactory->getDatabaseName(),
-            ];
-            $this->entityManager = require_once __DIR__ . '/../../demo/bootstrap.php';
+		$cache = new \Doctrine\Common\Cache\FilesystemCache(__DIR__ . '/../tmp');
+		$config = Setup::createConfiguration($isDevMode, __DIR__ . '/../tmp', $cache);
+		$config->setProxyDir(__DIR__ . '/../tmp');
+		$config->setProxyNamespace('MyProject\Proxies');
 
-            $this->user = $this->entityManager->createQueryBuilder()
-                ->select('u')
-                ->from('Mesour\Sources\Tests\Entity\User', 'u');
-            $this->empty = $this->entityManager->createQueryBuilder()
-                ->select('e')
-                ->from('Mesour\Sources\Tests\Entity\emptyTable', 'e');
-        }
-    }
+		$config->setAutoGenerateProxyClasses(true);
 
-    public function testPrimaryKey()
-    {
-        $source = new DoctrineSource($this->user, $this->columnMapping);
-        $this->matchPrimaryKey($source);
-    }
+		$paths = [__DIR__ . "/../Entity"];
 
-    public function testTotalCount()
-    {
-        $source = new DoctrineSource($this->user, $this->columnMapping);
-        $source->setPrimaryKey($this->primaryKey);
-        $this->matchTotalCount($source);
-    }
+		$driver = new \Doctrine\ORM\Mapping\Driver\AnnotationDriver(new AnnotationReader(), $paths);
+		\Doctrine\Common\Annotations\AnnotationRegistry::registerLoader('class_exists');
+		$config->setMetadataDriverImpl($driver);
+		$conn = [
+			'driver' => 'mysqli',
+			'host' => '127.0.0.1',
+			'user' => $this->databaseFactory->getUserName(),
+			'password' => $this->databaseFactory->getPassword(),
+			'dbname' => $this->databaseFactory->getDatabaseName(),
+		];
 
-    public function testFetchPairs()
-    {
-        $source = new DoctrineSource($this->user, $this->columnMapping);
-        $source->setPrimaryKey($this->primaryKey);
-        $this->matchPairs($source);
-    }
+		$this->entityManager = EntityManager::create($conn, $config);
 
-    public function testLimit()
-    {
-        $source = new DoctrineSource($this->user, $this->columnMapping);
-        $source->setPrimaryKey($this->primaryKey);
-        $this->matchLimit($source);
-    }
+		$this->entityManager->getConnection()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
+		\Doctrine\DBAL\Types\Type::addType('enum', StringType::class);
 
-    public function testOffset()
-    {
-        $source = new DoctrineSource($this->user, $this->columnMapping);
-        $source->setPrimaryKey($this->primaryKey);
-        $this->matchOffset($source);
-    }
+		$this->user = $this->entityManager->createQueryBuilder()
+			->select('u')
+			->from(User::class, 'u');
 
-    public function testWhere()
-    {
-        $source = new DoctrineSource($this->user, $this->columnMapping);
-        $source->setPrimaryKey($this->primaryKey);
-        $source->where('u.action = :action', ['action' => self::ACTIVE_STATUS]);
-        $this->matchWhere($source);
-    }
+		$this->empty = $this->entityManager->createQueryBuilder()
+			->select('e')
+			->from(EmptyTable::class, 'e');
+	}
 
-    public function testWhereDate()
-    {
-        $source = new DoctrineSource($this->user, $this->columnMapping);
-        $source->setPrimaryKey($this->primaryKey);
-        $source->where('u.lastLogin > :last_login', ['last_login' => self::DATE_BIGGER]);
-        $this->matchWhereDate($source);
-    }
+	public function testPrimaryKey()
+	{
+		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
+		$this->matchPrimaryKey($source);
 
-    public function testEmpty()
-    {
-        $source = new DoctrineSource($this->empty);
-        $source->setPrimaryKey($this->primaryKey);
-        $this->matchEmpty($source);
-    }
+		$source = new DoctrineSource(User::class, self::CHANGED_PRIMARY_KEY, $this->user, $this->columnMapping);
+		$this->matchPrimaryKey($source, self::CHANGED_PRIMARY_KEY);
+	}
 
-    public function testReference()
-    {
-        $queryBuilder = clone $this->user;
-        $queryBuilder->addSelect('g.name groupName')
-            ->addSelect('g.type groupType')
-            ->join(Groups::class, 'g', Join::WITH, 'u.groupId = g.id');
+	public function testTotalCount()
+	{
+		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
+		$this->matchTotalCount($source);
+	}
 
-        $source = new DoctrineSource($queryBuilder, $this->columnMapping);
-        $source->setPrimaryKey($this->primaryKey);
+	public function testFetchPairs()
+	{
+		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
+		$this->matchPairs($source);
+	}
 
-        $firstRow = $source->fetch();
-        Assert::count(self::COLUMN_RELATION_COUNT, $firstRow);
-        Assert::same(self::FIRST_GROUP_NAME, $firstRow['groupName']);
+	public function testLimit()
+	{
+		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
+		$this->matchLimit($source);
+	}
 
-        Assert::same(false, $source->hasReference(Groups::class));
+	public function testOffset()
+	{
+		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
+		$this->matchOffset($source);
+	}
 
-        $source->setReference('groupName', Groups::class, 'name');
-        $source->setReference('groupType', Groups::class, 'type');
+	public function testWhere()
+	{
+		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
+		$source->where('u.action = :action', ['action' => self::ACTIVE_STATUS]);
+		$this->matchWhere($source, self::FULL_USER_COUNT, $columns = self::FULL_COLUMN_COUNT);
+	}
 
-        Assert::same(true, $source->hasReference(Groups::class));
+	public function testWhereDate()
+	{
+		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
+		$source->where('u.lastLogin > :last_login', ['last_login' => self::DATE_BIGGER]);
+		$this->matchWhereDate($source, self::FULL_USER_COUNT, $columns = self::FULL_COLUMN_COUNT);
+	}
 
-        $related = $source->getReferencedSource(Groups::class);
+	public function testEmpty()
+	{
+		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->empty);
+		$this->matchEmpty($source);
+	}
 
-        Assert::type(DoctrineSource::class, $related);
-        Assert::same(self::GROUPS_COUNT, $related->getTotalCount());
-        Assert::same(count($source->fetch()), self::COLUMN_RELATION_COUNT);
+	public function testFetchLastRawRows()
+	{
+		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
 
-        Assert::same([
-            'groupName' => [
-                'table' => Groups::class,
-                'column' => 'name',
-                'primary' => 'id',
-            ],
-            'groupType' => [
-                'table' => Groups::class,
-                'column' => 'type',
-                'primary' => 'id',
-            ],
-        ], $source->getReferenceSettings());
+		Assert::exception(function () use ($source) {
+			$source->fetchLastRawRows();
+		}, InvalidStateException::class);
 
-        Assert::same([Groups::class => 'id'], $source->getReferencedTables());
+		$source->fetchAll();
 
-        $source->where('g.name = :groupName', [
-            'groupName' => 'Group 1',
-        ]);
+		$rawData = $source->fetchLastRawRows();
 
-        Assert::count(self::USERS_WITH_FIRST_GROUP, $source->fetchAll());
-    }
+		Assert::count(self::FULL_USER_COUNT, $rawData);
+		foreach ($rawData as $item) {
+			Assert::type(User::class, $item);
+		}
+	}
 
-    public function testFetchLastRawRows()
-    {
-        $source = new DoctrineSource($this->user, $this->columnMapping);
-        $source->setPrimaryKey($this->primaryKey);
+	public function testLoadedDataStructure()
+	{
+		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
 
-        Assert::exception(function () use ($source) {
-            $source->fetchLastRawRows();
-        }, InvalidStateException::class);
+		$tableNames = [
+			Group::class,
+			UserAddress::class,
+			Company::class,
+		];
 
-        $source->fetchAll();
-
-        $rawData = $source->fetchLastRawRows();
-
-        Assert::count(self::FULL_USER_COUNT, $rawData);
-        foreach ($rawData as $item) {
-            Assert::type(User::class, $item);
-        }
-    }
+		$this->assertDataStructure($source, $tableNames, User::class);
+	}
 
 }

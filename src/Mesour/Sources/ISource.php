@@ -16,122 +16,135 @@ namespace Mesour\Sources;
 interface ISource
 {
 
-    /**
-     * @param $primary_key
-     * @return static
-     */
-    public function setPrimaryKey($primary_key);
+	/**
+	 * @return string
+	 */
+	public function getPrimaryKey();
 
-    /**
-     * @return string
-     */
-    public function getPrimaryKey();
+	/**
+	 * @return string
+	 */
+	public function getTableName();
 
-    /**
-     * Get total count without apply where and limit
-     * @return int
-     */
-    public function getTotalCount();
+	/**
+	 * Get total count without apply where and limit
+	 * @return int
+	 */
+	public function getTotalCount();
 
-    /**
-     * Add where condition
-     *
-     * @param mixed $args
-     * @return static
-     */
-    public function where($args);
+	/**
+	 * Add where condition
+	 *
+	 * @param mixed $args
+	 * @return static
+	 */
+	public function where($args);
 
-    /**
-     * Apply limit and offset
-     *
-     * @param int $limit
-     * @param int $offset
-     * @return static
-     */
-    public function applyLimit($limit, $offset = 0);
+	/**
+	 * Apply limit and offset
+	 *
+	 * @param int $limit
+	 * @param int $offset
+	 * @return static
+	 */
+	public function applyLimit($limit, $offset = 0);
 
-    /**
-     * Get count with applied where without limit
-     *
-     * @return int
-     */
-    public function count();
+	/**
+	 * Get count with applied where without limit
+	 *
+	 * @return int
+	 */
+	public function count();
 
-    /**
-     * Get data with applied where, limit and offset
-     *
-     * @return array
-     */
-    public function fetchAll();
+	/**
+	 * Get data with applied where, limit and offset
+	 *
+	 * @return array
+	 */
+	public function fetchAll();
 
-    /**
-     * Get raw data from last fetchAll()
-     *
-     * IMPORTANT! fetchAll() must be called before call this method
-     *
-     * @return array
-     */
-    public function fetchLastRawRows();
+	/**
+	 * Get raw data from last fetchAll()
+	 *
+	 * IMPORTANT! fetchAll() must be called before call this method
+	 *
+	 * @return array
+	 */
+	public function fetchLastRawRows();
 
-    /**
-     * Get first element from data
-     *
-     * @return mixed
-     */
-    public function fetch();
+	/**
+	 * Get first element from data
+	 *
+	 * @return mixed
+	 */
+	public function fetch();
 
-    /**
-     * @param $key
-     * @param $value
-     * @return array
-     */
-    public function fetchPairs($key, $value);
+	/**
+	 * @param $key
+	 * @param $value
+	 * @return array
+	 */
+	public function fetchPairs($key, $value);
 
-    /**
-     * Selects columns to order by.
-     *
-     * @param $row
-     * @param string $sorting sorting direction
-     * @return static
-     */
-    public function orderBy($row, $sorting = 'ASC');
+	/**
+	 * Selects columns to order by.
+	 *
+	 * @param $row
+	 * @param string $sorting sorting direction
+	 * @return static
+	 */
+	public function orderBy($row, $sorting = 'ASC');
 
-    /**
-     * @param $columnAlias
-     * @param $table
-     * @param $column
-     * @param $primaryKey
-     * @return static
-     * @throws Exception
-     */
-    public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id');
+	/**
+	 * @return Structures\DataStructure
+	 */
+	public function getDataStructure();
 
-    /**
-     * @param $table
-     * @return string
-     */
-    public function getReference($columnAlias);
+	public function setDataStructure(Structures\ITableStructure $dataStructure);
 
-    /**
-     * @param $table
-     * @return bool
-     */
-    public function hasReference($table);
+	public function addTableToStructure($table, $primaryKey);
 
-    /**
-     * @param $table
-     * @return static
-     */
-    public function getReferencedSource($table);
+	/**
+	 * @param string $table
+	 * @param bool $internal
+	 * @return array
+	 */
+	public function getTableColumns($table, $internal = false);
 
-    /**
-     * @return array
-     */
-    public function getReferencedTables();
+	/**
+	 * @param $table
+	 * @return static
+	 */
+	public function getReferencedSource($table);
 
-    /**
-     * @return array
-     */
-    public function getReferenceSettings();
+	/**
+	 * @deprecated
+	 */
+	public function setPrimaryKey($primary_key);
+
+	/**
+	 * @deprecated
+	 */
+	public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id');
+
+	/**
+	 * @deprecated
+	 */
+	public function getReference($columnAlias);
+
+	/**
+	 * @deprecated
+	 */
+	public function hasReference($table);
+
+	/**
+	 * @deprecated
+	 */
+	public function getReferencedTables();
+
+	/**
+	 * @deprecated
+	 */
+	public function getReferenceSettings();
 
 }
