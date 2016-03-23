@@ -9,22 +9,24 @@
       "homepage": "http://mesour.com"
   }],
   "require": {
-      "php": ">=5.5.0"
+    "php": ">=5.5.0"
   },
   "require-dev": {
-      "nette/database": "~2.3",
-      "nette/tester": "~1.4",
-      "tracy/tracy": "~2.3.0",
-      "mesour/array-manager": "3.0.*@beta",
-      "doctrine/orm": "^2.5",
-      "nette/robot-loader": "^2.3"
+    "nette/database": "~2.3",
+    "nette/tester": "~1.4",
+    "tracy/tracy": "~2.3.0",
+    "mesour/array-manager": "3.0.*@beta",
+    "doctrine/orm": "^2.5",
+    "nette/robot-loader": "^2.3",
+    "slevomat/coding-standard": "^1.0",
+    "consistence/coding-standard": "^0.10"
   },
   "suggest": {
-      "mesour/array-manager": "to use DataSource for Array",
-      "nette/database": "to use DataSource for Nette Database",
-      "doctrine/orm": "to use DataSource for Doctrine"
+    "mesour/array-manager": "to use DataSource for Array",
+    "nette/database": "to use DataSource for Nette Database",
+    "doctrine/orm": "to use DataSource for Doctrine"
   },
   "autoload": {
-      "classmap": ["src/"]
+    "classmap": ["src/"]
   }
 }
