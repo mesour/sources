@@ -257,12 +257,21 @@ class DoctrineSource extends BaseSource
 
 	public function getReferencedSource($table, $callback = null, $tablePrefix = '_a0')
 	{
-		return parent::getReferencedSource($table, $callback ? $callback : function () use ($table, $tablePrefix) {
-			return new static(
+		return parent::getReferencedSource(
+			$table, $callback ? $callback : function () use ($table, $tablePrefix) {
+			$tableStructure = $this->getDataStructure()->getTableStructure($table);
+			$source = new static(
+				$tableStructure->getName(),
+				$tableStructure->getPrimaryKey(),
 				$this->getQueryBuilder()->getEntityManager()
 					->createQueryBuilder()->select($tablePrefix)
-					->from($table, $tablePrefix), $this->columnMapping);
-		});
+					->from($table, $tablePrefix),
+				$this->columnMapping
+			);
+			$source->setDataStructure($tableStructure);
+			return $source;
+		}
+		);
 	}
 
 	public function getTableColumns($table, $internal = false)
