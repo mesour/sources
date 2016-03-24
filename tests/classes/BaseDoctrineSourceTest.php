@@ -42,9 +42,9 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 
 		$isDevMode = false;
 
-		$cache = new \Doctrine\Common\Cache\FilesystemCache(__DIR__ . '/../tmp');
-		$config = Setup::createConfiguration($isDevMode, __DIR__ . '/../tmp', $cache);
-		$config->setProxyDir(__DIR__ . '/../tmp');
+		$cache = new \Doctrine\Common\Cache\FilesystemCache(__DIR__ . '/../../tmp');
+		$config = Setup::createConfiguration($isDevMode, __DIR__ . '/../../tmp', $cache);
+		$config->setProxyDir(__DIR__ . '/../../tmp');
 		$config->setProxyNamespace('MyProject\Proxies');
 
 		$config->setAutoGenerateProxyClasses(true);

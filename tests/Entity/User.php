@@ -119,6 +119,30 @@ class User
 		return $this->id;
 	}
 
+	/**
+	 * @return string
+	 */
+	public function getSurname()
+	{
+		return $this->surname;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getName()
+	{
+		return $this->name;
+	}
+
+	/**
+	 * @return Group
+	 */
+	public function getGroup()
+	{
+		return $this->group;
+	}
+
 	public function toArray()
 	{
 		$addresses = [];
