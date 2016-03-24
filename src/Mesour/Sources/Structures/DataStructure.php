@@ -10,7 +10,6 @@
 namespace Mesour\Sources\Structures;
 
 use Mesour;
-use Mesour\Sources\Structures\Columns;
 
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
@@ -43,8 +42,8 @@ class DataStructure extends TableStructure implements IDataStructure
 	}
 
 	/**
-	 * @param $name
-	 * @param $table
+	 * @param string $name
+	 * @param string $table
 	 * @param Columns\IColumnStructure|string $referencedColumn
 	 * @param string $primaryKey
 	 * @return Columns\OneToOneColumnStructure
@@ -80,8 +79,8 @@ class DataStructure extends TableStructure implements IDataStructure
 	}
 
 	/**
-	 * @param $name
-	 * @param $table
+	 * @param string $name
+	 * @param string $table
 	 * @param null|string $referencedColumn
 	 * @param null|string $pattern
 	 * @return Columns\OneToManyColumnStructure
@@ -109,11 +108,11 @@ class DataStructure extends TableStructure implements IDataStructure
 	}
 
 	/**
-	 * @param $name
-	 * @param $table
-	 * @param $selfColumn
-	 * @param $relationalTable
-	 * @param $relationalColumn
+	 * @param string $name
+	 * @param string $table
+	 * @param string $selfColumn
+	 * @param string $relationalTable
+	 * @param string $relationalColumn
 	 * @param null $pattern
 	 * @return Columns\ManyToManyColumnStructure
 	 */

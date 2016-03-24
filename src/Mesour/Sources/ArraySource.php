@@ -29,11 +29,6 @@ class ArraySource extends BaseSource
 
 	protected $dataArr = [];
 
-	/**
-	 * @param array $data
-	 * @param array $relations
-	 * @throws MissingRequiredException
-	 */
 	public function __construct($tableName, $primaryKey, array $data = [], array $referencedData = [])
 	{
 		parent::__construct($tableName, $primaryKey);
@@ -70,7 +65,7 @@ class ArraySource extends BaseSource
 		return $this;
 	}
 
-	static public function fixDate($date)
+	public static function fixDate($date)
 	{
 		return is_numeric($date) ? $date : strtotime($date);
 	}
@@ -158,22 +153,22 @@ class ArraySource extends BaseSource
 	public function joinField($table, $key, $column, $columnAlias, $left = false)
 	{
 		$source = $this->getReferencedSource($table);
-		foreach ($this->dataArr as $_key => $item) {
+		foreach ($this->dataArr as $currentKey => $item) {
 			/** @var ISource $currentSource */
 			$currentSource = clone $source;
-			$item_name = is_string($columnAlias) ? $columnAlias : $column;
+			$itemName = is_string($columnAlias) ? $columnAlias : $column;
 			if (isset($item[$key])) {
-				$_item = $currentSource
+				$currentItem = $currentSource
 					->where($source->getPrimaryKey(), $item[$key], Mesour\ArrayManage\Searcher\Condition::EQUAL)
 					->fetch();
-				if (isset($_item[$column])) {
-					$this->dataArr[$_key][$item_name] = $_item[$column];
+				if (isset($currentItem[$column])) {
+					$this->dataArr[$currentKey][$itemName] = $currentItem[$column];
 				} else {
-					$this->dataArr[$_key][$item_name] = null;
+					$this->dataArr[$currentKey][$itemName] = null;
 				}
 				$this->select = null;
 			} elseif ($left) {
-				$this->dataArr[$_key][$item_name] = null;
+				$this->dataArr[$currentKey][$itemName] = null;
 			} else {
 				throw new Exception('Column ' . $key . ' does not exist in data array.');
 			}
@@ -182,21 +177,21 @@ class ArraySource extends BaseSource
 
 		return $this;
 	}
-	
+
 	public function attachTable($table, $key, $columnAlias, $left = false)
 	{
 		$source = $this->getReferencedSource($table);
-		foreach ($this->dataArr as $_key => $item) {
+		foreach ($this->dataArr as $currentKey => $item) {
 			/** @var ISource $currentSource */
 			$currentSource = clone $source;
 			if (isset($item[$this->getPrimaryKey()])) {
-				$_items = $currentSource
+				$innerItems = $currentSource
 					->where($key, $item[$this->getPrimaryKey()], Mesour\ArrayManage\Searcher\Condition::EQUAL)
 					->fetchAll();
-				
-				$this->dataArr[$_key][$columnAlias] = $_items;
+
+				$this->dataArr[$currentKey][$columnAlias] = $innerItems;
 			} elseif ($left) {
-				$this->dataArr[$_key][$columnAlias] = [];
+				$this->dataArr[$currentKey][$columnAlias] = [];
 			} else {
 				throw new Exception('Column ' . $key . ' does not exist in data array.');
 			}
@@ -205,20 +200,20 @@ class ArraySource extends BaseSource
 
 		return $this;
 	}
-	
+
 	public function attachManyTable(Columns\ManyToManyColumnStructure $columnStructure, $left = false)
 	{
 		$source = $this->getReferencedSource($columnStructure->getReferencedTable());
-		foreach ($this->dataArr as $_key => $item) {
+		foreach ($this->dataArr as $currentKey => $item) {
 			/** @var ISource $currentSource */
 			$currentSource = clone $source;
 			if (isset($item[$this->getPrimaryKey()])) {
-				$_items = $currentSource
+				$innerItems = $currentSource
 					->where($columnStructure->getReferencedColumn(), $item[$this->getPrimaryKey()], Mesour\ArrayManage\Searcher\Condition::EQUAL)
 					->fetchAll();
 
 				$itemSource = $this->getReferencedSource($columnStructure->getTableStructure()->getName());
-				foreach ($_items as $current) {
+				foreach ($innerItems as $current) {
 					$itemSource->where(
 						$columnStructure->getTableStructure()->getPrimaryKey(),
 						$current[$columnStructure->getSelfColumn()],
@@ -226,10 +221,10 @@ class ArraySource extends BaseSource
 						'or'
 					);
 				}
-				
-				$this->dataArr[$_key][$columnStructure->getName()] = $itemSource->fetchAll();
+
+				$this->dataArr[$currentKey][$columnStructure->getName()] = $itemSource->fetchAll();
 			} elseif ($left) {
-				$this->dataArr[$_key][$columnStructure->getName()] = [];
+				$this->dataArr[$currentKey][$columnStructure->getName()] = [];
 			} else {
 				throw new Exception('Primary column ' . $this->getPrimaryKey() . ' not exists in data array.');
 			}

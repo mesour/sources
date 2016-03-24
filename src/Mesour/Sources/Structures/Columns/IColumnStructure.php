@@ -27,7 +27,7 @@ interface IColumnStructure
 	const MANY_TO_MANY = 'many_to_many';
 
 	public function getName();
-	
+
 	public function getType();
 
 }

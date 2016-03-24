@@ -144,7 +144,7 @@ class User
 			'timestamp' => $this->timestamp,
 			'last_login' => $this->lastLogin,
 			'role' => $this->role,
-			'has_pro' => (bool)$this->hasPro,
+			'has_pro' => (bool) $this->hasPro,
 			'group_name' => $group['name'],
 			'group_type' => $group['type'],
 			'group_date' => $group['date'],
@@ -155,4 +155,3 @@ class User
 	}
 
 }
-

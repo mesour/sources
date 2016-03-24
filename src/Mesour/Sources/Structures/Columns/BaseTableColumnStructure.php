@@ -74,10 +74,13 @@ abstract class BaseTableColumnStructure extends BaseColumnStructure
 		if (!$this->tableStructure) {
 			throw new Mesour\Sources\InvalidStateException('TableStructure is required. Use method setTableStructure.');
 		}
-		return array_merge(parent::toArray(), [
-			'tableStructure' => $this->tableStructure->toArray(),
-			'pattern' => $this->pattern,
-		]);
+		return array_merge(
+			parent::toArray(),
+			[
+				'tableStructure' => $this->tableStructure->toArray(),
+				'pattern' => $this->pattern,
+			]
+		);
 	}
 
 }

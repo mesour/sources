@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class EmptyTable
 {
+
 	/**
 	 * @var integer
 	 * @ORM\Column(name="id", type="integer", nullable=false)
@@ -30,7 +31,8 @@ class EmptyTable
 	 */
 	private $surname;
 
-	public function toArray() {
+	public function toArray()
+	{
 		return [
 			'id' => $this->id,
 			'name' => $this->name,
@@ -39,4 +41,3 @@ class EmptyTable
 	}
 
 }
-

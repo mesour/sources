@@ -56,7 +56,7 @@ class DatabaseFactory extends Nette\Object
 
 	private function getDsn()
 	{
-		return "mysql:host=" . $this->host;
+		return 'mysql:host=' . $this->host;
 	}
 
 	public function getUserName()
@@ -76,7 +76,7 @@ class DatabaseFactory extends Nette\Object
 
 	private function getDsnWithDatabase($dbName)
 	{
-		return $this->getDsn() . ";dbname=" . $dbName;
+		return $this->getDsn() . ';dbname=' . $dbName;
 	}
 
 	private function getRandomDbName()

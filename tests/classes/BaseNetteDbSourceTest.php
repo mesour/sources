@@ -4,13 +4,9 @@ namespace Mesour\Sources\Tests;
 
 use Mesour\Sources\InvalidStateException;
 use Mesour\Sources\NetteDbTableSource;
-use Mesour\Sources\Structures\Columns\IColumnStructure;
-use Mesour\Sources\Tests\Entity\Company;
-use Mesour\Sources\Tests\Entity\Group;
-use Mesour\Sources\Tests\Entity\UserAddress;
 use Nette\Caching\Storages\MemoryStorage;
-use Tester\Assert;
 use Nette\Database;
+use Tester\Assert;
 
 abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 {
@@ -108,9 +104,12 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 	{
 		$source = new NetteDbTableSource($this->tableName, 'id', $this->user, $this->context);
 
-		Assert::exception(function () use ($source) {
-			$source->fetchLastRawRows();
-		}, InvalidStateException::class);
+		Assert::exception(
+			function () use ($source) {
+				$source->fetchLastRawRows();
+			},
+			InvalidStateException::class
+		);
 
 		$source->fetchAll();
 
@@ -125,7 +124,7 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 	public function testLoadedDataStructure()
 	{
 		$source = new NetteDbTableSource($this->tableName, 'id', $this->user, $this->context, $this->columnMapping);
-		
+
 		$source->addTableToStructure('companies', 'id');
 
 		$tableNames = [
@@ -173,7 +172,7 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 		);
 		$item = $source->fetchAll();
 		Assert::equal(reset($item), $firstItem = $source->fetch());
-		Assert::count(self::FULL_COLUMN_COUNT, array_keys((array)$firstItem));
+		Assert::count(self::FULL_COLUMN_COUNT, array_keys((array) $firstItem));
 
 		Assert::count(3, $firstItem['companies']);
 		Assert::count(1, $firstItem['addresses']);

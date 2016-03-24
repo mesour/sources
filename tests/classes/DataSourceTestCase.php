@@ -1,34 +1,33 @@
 <?php
 namespace Mesour\Sources\Tests;
 
-use Mesour\Sources\DoctrineSource;
 use Mesour\Sources\ISource;
 use Mesour\Sources\Structures\Columns\IColumnStructure;
 use Tester\Assert;
-use \Tester\TestCase;
+use Tester\TestCase;
 
 abstract class DataSourceTestCase extends TestCase
 {
 
-	CONST CHANGED_PRIMARY_KEY = 'user_id',
-		OWN_PRIMARY_KEY = 'id',
-		FULL_USER_COUNT = 20,
-		COLUMN_COUNT = 13,
-		FULL_COLUMN_COUNT = 18,
-		COLUMN_RELATION_COUNT = 13,
-		FIRST_GROUP_NAME = 'Group 1',
-		ACTIVE_COUNT = 10,
-		INACTIVE_STATUS = 0,
-		GROUPS_COUNT = 3,
-		USERS_WITH_FIRST_GROUP = 7,
-		ACTIVE_STATUS = 1,
-		DATE_BIGGER = '2014-09-01 06:27:32',
-		DATE_BIGGER_COUNT = 12,
-		CHECKERS_COUNT = 8,
-		CUSTOM_COUNT = 7,
-		CUSTOM_OR_COUNT = 3,
-		LIMIT = 5,
-		OFFSET = 2;
+	const CHANGED_PRIMARY_KEY = 'user_id';
+	const OWN_PRIMARY_KEY = 'id';
+	const FULL_USER_COUNT = 20;
+	const COLUMN_COUNT = 13;
+	const FULL_COLUMN_COUNT = 18;
+	const COLUMN_RELATION_COUNT = 13;
+	const FIRST_GROUP_NAME = 'Group 1';
+	const ACTIVE_COUNT = 10;
+	const INACTIVE_STATUS = 0;
+	const GROUPS_COUNT = 3;
+	const USERS_WITH_FIRST_GROUP = 7;
+	const ACTIVE_STATUS = 1;
+	const DATE_BIGGER = '2014-09-01 06:27:32';
+	const DATE_BIGGER_COUNT = 12;
+	const CHECKERS_COUNT = 8;
+	const CUSTOM_COUNT = 7;
+	const CUSTOM_OR_COUNT = 3;
+	const LIMIT = 5;
+	const OFFSET = 2;
 
 	protected $config = [];
 
@@ -71,8 +70,10 @@ abstract class DataSourceTestCase extends TestCase
 		$this->config = is_file($localConfigFile) ? require_once $localConfigFile : require_once $configFile;
 
 		$this->databaseFactory = new DatabaseFactory(
-			'127.0.0.1', $this->config['database']['username'],
-			$this->config['database']['password'], 'mesour_sources_'
+			'127.0.0.1',
+			$this->config['database']['username'],
+			$this->config['database']['password'],
+			'mesour_sources_'
 		);
 		$this->baseConnection = $this->databaseFactory->create();
 	}
@@ -96,7 +97,6 @@ abstract class DataSourceTestCase extends TestCase
 				Assert::same($options['values'], $column->getValues());
 			}
 		}
-
 
 		$expectedGroupColumns = $this->getGroupExpectedColumns();
 		$expectedAddressColumns = $this->getAddressExpectedColumns();
@@ -261,9 +261,9 @@ abstract class DataSourceTestCase extends TestCase
 	protected function matchOffset(ISource $source)
 	{
 		$source->applyLimit(self::LIMIT, self::OFFSET);
-		$all_data = $this->assertLimit($source);
-		$first_user = reset($all_data);
-		Assert::equal((string)(self::OFFSET + 1), (string)$first_user[self::OWN_PRIMARY_KEY]);
+		$allData = $this->assertLimit($source);
+		$firstUser = reset($allData);
+		Assert::equal((string) (self::OFFSET + 1), (string) $firstUser[self::OWN_PRIMARY_KEY]);
 	}
 
 	protected function matchWhere(ISource $source, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT)
@@ -281,7 +281,7 @@ abstract class DataSourceTestCase extends TestCase
 		$this->assertCounts($source, 0, 0, 0, true);
 	}
 
-	private function assertCounts(ISource $source, $active_count, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT, $fetch = false)
+	private function assertCounts(ISource $source, $activeCount, $full = self::FULL_USER_COUNT, $columns = self::COLUMN_COUNT, $fetch = false)
 	{
 		$itemData = $source->fetch();
 		if (!$fetch) {
@@ -289,9 +289,9 @@ abstract class DataSourceTestCase extends TestCase
 		} else {
 			Assert::same(false, $itemData);
 		}
-		Assert::count($active_count, $source->fetchAll());
+		Assert::count($activeCount, $source->fetchAll());
 		Assert::same($full, $source->getTotalCount());
-		Assert::same($active_count, $source->count());
+		Assert::same($activeCount, $source->count());
 	}
 
 	private function assertLimit(ISource $source)
@@ -303,4 +303,5 @@ abstract class DataSourceTestCase extends TestCase
 
 		return $all;
 	}
+
 }

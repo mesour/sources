@@ -2,12 +2,11 @@
 
 namespace Mesour\Sources\Tests;
 
-
-use Doctrine\DBAL\Types\StringType;
-use Mesour\Sources\DoctrineSource;
-use Doctrine\ORM\Tools\Setup;
-use Doctrine\ORM\EntityManager;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\DBAL\Types\StringType;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Tools\Setup;
+use Mesour\Sources\DoctrineSource;
 use Mesour\Sources\InvalidStateException;
 use Mesour\Sources\Tests\Entity\Company;
 use Mesour\Sources\Tests\Entity\EmptyTable;
@@ -50,7 +49,7 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 
 		$config->setAutoGenerateProxyClasses(true);
 
-		$paths = [__DIR__ . "/../Entity"];
+		$paths = [__DIR__ . '/../Entity'];
 
 		$driver = new \Doctrine\ORM\Mapping\Driver\AnnotationDriver(new AnnotationReader(), $paths);
 		\Doctrine\Common\Annotations\AnnotationRegistry::registerLoader('class_exists');
@@ -134,9 +133,12 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 	{
 		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
 
-		Assert::exception(function () use ($source) {
-			$source->fetchLastRawRows();
-		}, InvalidStateException::class);
+		Assert::exception(
+			function () use ($source) {
+				$source->fetchLastRawRows();
+			},
+			InvalidStateException::class
+		);
 
 		$source->fetchAll();
 

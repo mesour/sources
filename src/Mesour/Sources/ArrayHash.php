@@ -6,90 +6,90 @@
 
 namespace Mesour\Sources;
 
-
 /**
  * Provides objects to work as array.
  */
 class ArrayHash extends \stdClass implements \ArrayAccess, \Countable, \IteratorAggregate
 {
-    /**
-     * @param  array $arr to wrap
-     * @param  bool $recursive
-     * @return self
-     */
-    public static function from($arr, $recursive = true)
-    {
-        $obj = new static;
-        foreach ($arr as $key => $value) {
-            if ($recursive && is_array($value)) {
-                $obj->$key = static::from($value, true);
-            } else {
-                $obj->$key = $value;
-            }
-        }
-        return $obj;
-    }
 
-    /**
-     * Returns an iterator over all items.
-     * @return \RecursiveArrayIterator
-     */
-    public function getIterator()
-    {
-        return new \RecursiveArrayIterator($this);
-    }
+	/**
+	 * @param  array $arr to wrap
+	 * @param  bool $recursive
+	 * @return self
+	 */
+	public static function from($arr, $recursive = true)
+	{
+		$obj = new static;
+		foreach ($arr as $key => $value) {
+			if ($recursive && is_array($value)) {
+				$obj->$key = static::from($value, true);
+			} else {
+				$obj->$key = $value;
+			}
+		}
+		return $obj;
+	}
 
-    /**
-     * Returns items count.
-     * @return int
-     */
-    public function count()
-    {
-        return count((array)$this);
-    }
+	/**
+	 * Returns an iterator over all items.
+	 * @return \RecursiveArrayIterator
+	 */
+	public function getIterator()
+	{
+		return new \RecursiveArrayIterator($this);
+	}
 
-    /**
-     * Replaces or appends a item.
-     * @param string $key
-     * @param mixed $value
-     * @return void
-     */
-    public function offsetSet($key, $value)
-    {
-        if (!is_scalar($key)) { // prevents NULL
-            throw new InvalidArgumentException(sprintf('Key must be either a string or an integer, %s given.', gettype($key)));
-        }
-        $this->$key = $value;
-    }
+	/**
+	 * Returns items count.
+	 * @return int
+	 */
+	public function count()
+	{
+		return count((array) $this);
+	}
 
-    /**
-     * Returns a item.
-     * @param string $key
-     * @return mixed
-     */
-    public function offsetGet($key)
-    {
-        return $this->$key;
-    }
+	/**
+	 * Replaces or appends a item.
+	 * @param string $key
+	 * @param mixed $value
+	 * @return void
+	 */
+	public function offsetSet($key, $value)
+	{
+		if (!is_scalar($key)) { // prevents NULL
+			throw new InvalidArgumentException(sprintf('Key must be either a string or an integer, %s given.', gettype($key)));
+		}
+		$this->$key = $value;
+	}
 
-    /**
-     * Determines whether a item exists.
-     * @param string $key
-     * @return bool
-     */
-    public function offsetExists($key)
-    {
-        return isset($this->$key);
-    }
+	/**
+	 * Returns a item.
+	 * @param string $key
+	 * @return mixed
+	 */
+	public function offsetGet($key)
+	{
+		return $this->$key;
+	}
 
-    /**
-     * Removes the element from this list.
-     * @param string $key
-     * @return void
-     */
-    public function offsetUnset($key)
-    {
-        unset($this->$key);
-    }
+	/**
+	 * Determines whether a item exists.
+	 * @param string $key
+	 * @return bool
+	 */
+	public function offsetExists($key)
+	{
+		return isset($this->$key);
+	}
+
+	/**
+	 * Removes the element from this list.
+	 * @param string $key
+	 * @return void
+	 */
+	public function offsetUnset($key)
+	{
+		unset($this->$key);
+	}
 
 }

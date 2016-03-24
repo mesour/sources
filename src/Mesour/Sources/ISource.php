@@ -9,7 +9,6 @@
 
 namespace Mesour\Sources;
 
-
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
  */
@@ -80,16 +79,15 @@ interface ISource
 	public function fetch();
 
 	/**
-	 * @param $key
-	 * @param $value
+	 * @param string $key
+	 * @param string $value
 	 * @return array
 	 */
 	public function fetchPairs($key, $value);
 
 	/**
 	 * Selects columns to order by.
-	 *
-	 * @param $row
+	 * @param string $row
 	 * @param string $sorting sorting direction
 	 * @return static
 	 */
@@ -112,17 +110,21 @@ interface ISource
 	public function getTableColumns($table, $internal = false);
 
 	/**
-	 * @param $table
-	 * @return static
+	 * @param string $table
 	 */
 	public function getReferencedSource($table);
 
 	/**
+	 * @param string $primaryKey
 	 * @deprecated
 	 */
-	public function setPrimaryKey($primary_key);
+	public function setPrimaryKey($primaryKey);
 
 	/**
+	 * @param string $columnAlias
+	 * @param string $table
+	 * @param string $referencedColumn
+	 * @param string $primaryKey
 	 * @deprecated
 	 */
 	public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id');
@@ -130,9 +132,10 @@ interface ISource
 	/**
 	 * @deprecated
 	 */
-	public function getReference($columnAlias);
+	public function getReferenceSettings();
 
 	/**
+	 * @param string $table
 	 * @deprecated
 	 */
 	public function hasReference($table);
@@ -143,8 +146,9 @@ interface ISource
 	public function getReferencedTables();
 
 	/**
+	 * @param string $columnAlias
 	 * @deprecated
 	 */
-	public function getReferenceSettings();
+	public function getReference($columnAlias);
 
 }

@@ -8,6 +8,7 @@ require_once __DIR__ . '/../classes/BaseDoctrineSourceTest.php';
 
 class DoctrineSourceTest extends BaseDoctrineSourceTest
 {
+
 }
 
 $test = new DoctrineSourceTest();

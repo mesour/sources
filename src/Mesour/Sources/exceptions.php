@@ -9,23 +9,27 @@
 
 namespace Mesour\Sources;
 
-
 class Exception extends \Exception
 {
+
 }
 
 class MissingRequiredException extends Exception
 {
+
 }
 
 class InvalidArgumentException extends \InvalidArgumentException
 {
+
 }
 
 class InvalidStateException extends \LogicException
 {
+
 }
 
 class TableNotExistException extends \LogicException
 {
+
 }

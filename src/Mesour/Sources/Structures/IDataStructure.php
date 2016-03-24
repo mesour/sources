@@ -26,8 +26,8 @@ interface IDataStructure extends ITableStructure
 	public function getSource($need = true);
 
 	/**
-	 * @param $name
-	 * @param $table
+	 * @param string $name
+	 * @param string $table
 	 * @param Columns\IColumnStructure|string $referencedColumn
 	 * @param string $primaryKey
 	 * @return Columns\OneToOneColumnStructure
@@ -35,26 +35,27 @@ interface IDataStructure extends ITableStructure
 	public function addOneToOne($name, $table, $referencedColumn, $primaryKey = 'id');
 
 	/**
-	 * @param $name
-	 * @param $table
-	 * @param $referencedColumn
+	 * @param string $name
+	 * @param string $table
+	 * @param string $referencedColumn
 	 * @param null $pattern
 	 * @return Columns\OneToManyColumnStructure
 	 */
 	public function addOneToMany($name, $table, $referencedColumn, $pattern = null);
 
 	/**
-	 * @param $name
-	 * @param $table
-	 * @param $selfColumn
-	 * @param $relationalTable
-	 * @param $relationalColumn
+	 * @param string $name
+	 * @param string $table
+	 * @param string $selfColumn
+	 * @param string $relationalTable
+	 * @param string $relationalColumn
 	 * @param null $pattern
 	 * @return Columns\ManyToManyColumnStructure
 	 */
 	public function addManyToMany($name, $table, $selfColumn, $relationalTable, $relationalColumn, $pattern = null);
 
 	/**
+	 * @param string $table
 	 * @return bool
 	 */
 	public function hasTableStructure($table);
@@ -65,6 +66,7 @@ interface IDataStructure extends ITableStructure
 	public function getTableStructures();
 
 	/**
+	 * @param string $table
 	 * @return TableStructure
 	 */
 	public function getTableStructure($table);
