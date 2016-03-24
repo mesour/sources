@@ -53,12 +53,13 @@ interface ITableStructure
 	public function getColumns();
 
 	/**
+	 * @param string $name
 	 * @return bool
 	 */
 	public function hasColumn($name);
 
 	/**
-	 * @param $name
+	 * @param string $name
 	 * @return Mesour\Sources\Structures\Columns\IColumnStructure
 	 */
 	public function getColumn($name);

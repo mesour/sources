@@ -10,15 +10,15 @@
 namespace Mesour\Sources\Structures;
 
 use Mesour;
-use Mesour\Sources\Structures\Columns\TextColumnStructure;
-use Mesour\Sources\Structures\Columns\EnumColumnStructure;
-use Mesour\Sources\Structures\Columns\DateColumnStructure;
-use Mesour\Sources\Structures\Columns\NumberColumnStructure;
-use Mesour\Sources\Structures\Columns\IColumnStructure;
-use Mesour\Sources\Structures\Columns\OneToOneColumnStructure;
-use Mesour\Sources\Structures\Columns\OneToManyColumnStructure;
-use Mesour\Sources\Structures\Columns\ManyToManyColumnStructure;
 use Mesour\Sources\Structures\Columns\BoolColumnStructure;
+use Mesour\Sources\Structures\Columns\DateColumnStructure;
+use Mesour\Sources\Structures\Columns\EnumColumnStructure;
+use Mesour\Sources\Structures\Columns\IColumnStructure;
+use Mesour\Sources\Structures\Columns\ManyToManyColumnStructure;
+use Mesour\Sources\Structures\Columns\NumberColumnStructure;
+use Mesour\Sources\Structures\Columns\OneToManyColumnStructure;
+use Mesour\Sources\Structures\Columns\OneToOneColumnStructure;
+use Mesour\Sources\Structures\Columns\TextColumnStructure;
 
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>

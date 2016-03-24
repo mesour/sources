@@ -119,6 +119,30 @@ class User
 		return $this->id;
 	}
 
+	/**
+	 * @return string
+	 */
+	public function getSurname()
+	{
+		return $this->surname;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getName()
+	{
+		return $this->name;
+	}
+
+	/**
+	 * @return Group
+	 */
+	public function getGroup()
+	{
+		return $this->group;
+	}
+
 	public function toArray()
 	{
 		$addresses = [];
@@ -144,7 +168,7 @@ class User
 			'timestamp' => $this->timestamp,
 			'last_login' => $this->lastLogin,
 			'role' => $this->role,
-			'has_pro' => (bool)$this->hasPro,
+			'has_pro' => (bool) $this->hasPro,
 			'group_name' => $group['name'],
 			'group_type' => $group['type'],
 			'group_date' => $group['date'],
@@ -155,4 +179,3 @@ class User
 	}
 
 }
-

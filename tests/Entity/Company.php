@@ -44,6 +44,11 @@ class Company
 	 */
 	private $users;
 
+	public function addUser(User $user)
+	{
+		$this->users->add($user);
+	}
+
 	/**
 	 * @return int
 	 */
@@ -63,4 +68,3 @@ class Company
 	}
 
 }
-

@@ -10,7 +10,6 @@
 namespace Mesour\Sources;
 
 use Mesour;
-use Mesour\Sources\Structures;
 
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
@@ -71,7 +70,8 @@ abstract class BaseSource implements ISource
 	}
 
 	/**
-	 * @param $table
+	 * @param string $table
+	 * @param null|callable $callback
 	 * @return static
 	 * @throws InvalidArgumentException
 	 */
@@ -104,7 +104,7 @@ abstract class BaseSource implements ISource
 	public function setDataStructure(Structures\ITableStructure $dataStructure)
 	{
 		$this->dataStructure = $dataStructure;
-		if($dataStructure instanceof Structures\IDataStructure) {
+		if ($dataStructure instanceof Structures\IDataStructure) {
 			$this->dataStructure->setSource($this);
 		}
 		return $this;
@@ -116,7 +116,7 @@ abstract class BaseSource implements ISource
 			!$internal
 			&& ($this->getDataStructure()->hasTableStructure($table) || $table === $this->getTableName())
 		) {
-			if($table === $this->getTableName()) {
+			if ($table === $this->getTableName()) {
 				$columns = $this->getDataStructure()->getColumns();
 			} else {
 				$columns = $this->getDataStructure()->getTableStructure($table)->getColumns();
@@ -146,6 +146,8 @@ abstract class BaseSource implements ISource
 	}
 
 	/**
+	 * @param string $primaryKey
+	 * @return $this
 	 * @deprecated
 	 */
 	public function setPrimaryKey($primaryKey)
@@ -155,6 +157,11 @@ abstract class BaseSource implements ISource
 	}
 
 	/**
+	 * @param string $columnAlias
+	 * @param string $table
+	 * @param string $referencedColumn
+	 * @param string $primaryKey
+	 * @return $this
 	 * @deprecated
 	 */
 	public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id')
@@ -164,6 +171,7 @@ abstract class BaseSource implements ISource
 	}
 
 	/**
+	 * @return array
 	 * @deprecated
 	 */
 	public function getReferenceSettings()
@@ -173,6 +181,8 @@ abstract class BaseSource implements ISource
 	}
 
 	/**
+	 * @param string $table
+	 * @return bool
 	 * @deprecated
 	 */
 	public function hasReference($table)
@@ -182,6 +192,7 @@ abstract class BaseSource implements ISource
 	}
 
 	/**
+	 * @return array
 	 * @deprecated
 	 */
 	public function getReferencedTables()
@@ -191,6 +202,7 @@ abstract class BaseSource implements ISource
 	}
 
 	/**
+	 * @param string $columnAlias
 	 * @deprecated
 	 */
 	public function getReference($columnAlias)

@@ -11,12 +11,11 @@ namespace Mesour\Sources;
 
 use Nette;
 
-
 /**
  * Class NetteDbSource
  * @package Mesour\Sources
- * 
- * @deprecated 
+ *
+ * @deprecated
  */
 class NetteDbSource extends NetteDbTableSource
 {

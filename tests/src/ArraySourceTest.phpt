@@ -8,6 +8,7 @@ require_once __DIR__ . '/../classes/BaseArraySourceTest.php';
 
 class ArraySourceTest extends BaseArraySourceTest
 {
+
 }
 
 $test = new ArraySourceTest();

@@ -3,11 +3,10 @@
 namespace Mesour\Sources\Tests;
 
 use Mesour\ArrayManage\Searcher\Condition;
+use Mesour\Sources\ArrayHash;
 use Mesour\Sources\ArraySource;
-use Mesour\Sources\Exception;
 use Mesour\Sources\InvalidStateException;
 use Tester\Assert;
-use Mesour\Sources\ArrayHash;
 
 abstract class BaseArraySourceTest extends DataSourceTestCase
 {
@@ -112,12 +111,12 @@ abstract class BaseArraySourceTest extends DataSourceTestCase
 
 		$item = $source->fetchAll();
 		Assert::equal(reset($item), $firstItem = $source->fetch());
-		Assert::count(self::FULL_COLUMN_COUNT, array_keys((array)$firstItem));
+		Assert::count(self::FULL_COLUMN_COUNT, array_keys((array) $firstItem));
 
 		Assert::count(3, $firstItem['companies']);
 		Assert::count(1, $firstItem['addresses']);
 	}
-	
+
 	public function testPrimaryKey()
 	{
 		$source = new ArraySource('users', 'id', self::$user);
@@ -183,9 +182,12 @@ abstract class BaseArraySourceTest extends DataSourceTestCase
 	{
 		$source = new ArraySource('users', 'id', self::$user, $this->relations);
 
-		Assert::exception(function () use ($source) {
-			$source->fetchLastRawRows();
-		}, InvalidStateException::class);
+		Assert::exception(
+			function () use ($source) {
+				$source->fetchLastRawRows();
+			},
+			InvalidStateException::class
+		);
 
 		$source->fetchAll();
 
@@ -210,7 +212,8 @@ abstract class BaseArraySourceTest extends DataSourceTestCase
 		$this->assertDataStructure($source, $tableNames);
 	}
 
-	protected function createArraySourceWithDataStructure() {
+	protected function createArraySourceWithDataStructure()
+	{
 		$source = new ArraySource('users', self::OWN_PRIMARY_KEY, self::$user, $this->relations);
 
 		$dataStructure = $source->getDataStructure();

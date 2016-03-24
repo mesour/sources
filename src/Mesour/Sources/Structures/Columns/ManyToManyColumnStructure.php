@@ -63,10 +63,13 @@ class ManyToManyColumnStructure extends BaseTableColumnStructure
 		if (!$this->selfColumn) {
 			throw new Mesour\Sources\InvalidStateException('Self column is required. Use method setReferencedTable.');
 		}
-		return array_merge(parent::toArray(), [
-			'referencedTable' => $this->referencedTable,
-			'selfColumn' => $this->selfColumn,
-		]);
+		return array_merge(
+			parent::toArray(),
+			[
+				'referencedTable' => $this->referencedTable,
+				'selfColumn' => $this->selfColumn,
+			]
+		);
 	}
 
 	public function getType()

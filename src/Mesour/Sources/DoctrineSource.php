@@ -12,9 +12,9 @@ namespace Mesour\Sources;
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Mapping\MappingException;
+use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
-use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Mesour\Sources\Structures\Columns\IColumnStructure;
 
@@ -39,7 +39,6 @@ class DoctrineSource extends BaseSource
 	 * @var int
 	 */
 	protected $itemsTotalCount = 0;
-
 
 	protected $limit = null;
 
@@ -257,12 +256,22 @@ class DoctrineSource extends BaseSource
 
 	public function getReferencedSource($table, $callback = null, $tablePrefix = '_a0')
 	{
-		return parent::getReferencedSource($table, $callback ? $callback : function () use ($table, $tablePrefix) {
-			return new static(
-				$this->getQueryBuilder()->getEntityManager()
-					->createQueryBuilder()->select($tablePrefix)
-					->from($table, $tablePrefix), $this->columnMapping);
-		});
+		return parent::getReferencedSource(
+			$table,
+			$callback ? $callback : function () use ($table, $tablePrefix) {
+				$tableStructure = $this->getDataStructure()->getTableStructure($table);
+				$source = new static(
+					$tableStructure->getName(),
+					$tableStructure->getPrimaryKey(),
+					$this->getQueryBuilder()->getEntityManager()
+						->createQueryBuilder()->select($tablePrefix)
+						->from($table, $tablePrefix),
+					$this->columnMapping
+				);
+				$source->setDataStructure($tableStructure);
+				return $source;
+			}
+		);
 	}
 
 	public function getTableColumns($table, $internal = false)
@@ -300,14 +309,16 @@ class DoctrineSource extends BaseSource
 			$targetEntity = $associationMapping['targetEntity'];
 
 			$currentTableInstance = null;
-			foreach ($tables as $_table) {
-				if ($_table->getName() === $this->getTableNameFromClassName($targetEntity)) {
-					$currentTableInstance = $_table;
+			foreach ($tables as $currentTable) {
+				if ($currentTable->getName() === $this->getTableNameFromClassName($targetEntity)) {
+					$currentTableInstance = $currentTable;
 					break;
 				}
 			}
 			if (!$currentTableInstance) {
-				throw new TableNotExistException("Table for entity $targetEntity not exists.");
+				throw new TableNotExistException(
+					sprintf('Table for entity %s not exists.', $targetEntity)
+				);
 			}
 
 			$primaryColumns = $currentTableInstance->getPrimaryKey()->getColumns();
@@ -344,30 +355,30 @@ class DoctrineSource extends BaseSource
 				$type = $column->getType()->getName();
 
 				switch ($type) {
-					case Type::STRING :
-					case Type::TEXT :
+					case Type::STRING:
+					case Type::TEXT:
 						$out[$column->getName()] = [
 							'type' => IColumnStructure::TEXT,
 						];
 						break;
-					case Type::INTEGER :
-					case Type::FLOAT :
-					case Type::SMALLINT :
-					case Type::BIGINT :
-					case Type::DECIMAL :
+					case Type::INTEGER:
+					case Type::FLOAT:
+					case Type::SMALLINT:
+					case Type::BIGINT:
+					case Type::DECIMAL:
 						$out[$column->getName()] = [
 							'type' => IColumnStructure::NUMBER,
 						];
 						break;
-					case Type::DATETIME :
-					case Type::DATETIMETZ :
-					case Type::DATE :
-					case Type::TIME :
+					case Type::DATETIME:
+					case Type::DATETIMETZ:
+					case Type::DATE:
+					case Type::TIME:
 						$out[$column->getName()] = [
 							'type' => IColumnStructure::DATE,
 						];
 						break;
-					case Type::BOOLEAN :
+					case Type::BOOLEAN:
 						$out[$column->getName()] = [
 							'type' => IColumnStructure::BOOL,
 						];

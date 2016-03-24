@@ -169,7 +169,7 @@ class NetteDbTableSource extends BaseSource
 	}
 
 	/**
-	 * @param $table
+	 * @param string $table
 	 * @param null $callback
 	 * @return static
 	 */
@@ -178,18 +178,21 @@ class NetteDbTableSource extends BaseSource
 		if (!$this->context) {
 			throw new InvalidStateException('For get referenced source need context in constructor.');
 		}
-		return parent::getReferencedSource($table, $callback ? $callback : function () use ($table) {
-			$tableStructure = $this->getDataStructure()->getTableStructure($table);
-			$source = new static(
-				$tableStructure->getName(),
-				$tableStructure->getPrimaryKey(),
-				$this->context->table($table),
-				$this->context,
-				$this->columnMapping
-			);
-			$source->setDataStructure($tableStructure);
-			return $source;
-		});
+		return parent::getReferencedSource(
+			$table,
+			$callback ? $callback : function () use ($table) {
+				$tableStructure = $this->getDataStructure()->getTableStructure($table);
+				$source = new static(
+					$tableStructure->getName(),
+					$tableStructure->getPrimaryKey(),
+					$this->context->table($table),
+					$this->context,
+					$this->columnMapping
+				);
+				$source->setDataStructure($tableStructure);
+				return $source;
+			}
+		);
 	}
 
 	public function getTableColumns($table, $internal = false)
@@ -211,6 +214,7 @@ class NetteDbTableSource extends BaseSource
 
 	/**
 	 * Get searched values with applied limit, offset and where
+	 * @param array $ids
 	 * @return ArrayHash[]
 	 */
 	protected function findByIds(array $ids)
@@ -260,12 +264,12 @@ class NetteDbTableSource extends BaseSource
 
 				if ($column instanceof OneToManyColumnStructure || $column instanceof ManyToManyColumnStructure) {
 					$newValues[$column->getName()] = [];
-					foreach ($joined[$column->getName()] as $_item) {
+					foreach ($joined[$column->getName()] as $currentItem) {
 						if (
 							$item[$column->getTableStructure()->getPrimaryKey()]
-							=== $_item[$column->getReferencedColumn()]
+							=== $currentItem[$column->getReferencedColumn()]
 						) {
-							$newValues[$column->getName()][] = $_item;
+							$newValues[$column->getName()][] = $currentItem;
 						}
 					}
 
@@ -323,26 +327,26 @@ class NetteDbTableSource extends BaseSource
 				];
 			} else {
 				switch ($type) {
-					case Nette\Database\IStructure::FIELD_TEXT :
+					case Nette\Database\IStructure::FIELD_TEXT:
 						$out[$column['name']] = [
 							'type' => IColumnStructure::TEXT,
 						];
 						break;
-					case Nette\Database\IStructure::FIELD_INTEGER :
-					case Nette\Database\IStructure::FIELD_FLOAT :
+					case Nette\Database\IStructure::FIELD_INTEGER:
+					case Nette\Database\IStructure::FIELD_FLOAT:
 						$out[$column['name']] = [
 							'type' => IColumnStructure::NUMBER,
 						];
 						break;
-					case Nette\Database\IStructure::FIELD_DATE :
-					case Nette\Database\IStructure::FIELD_TIME :
-					case Nette\Database\IStructure::FIELD_DATETIME :
-					case Nette\Database\IStructure::FIELD_UNIX_TIMESTAMP :
+					case Nette\Database\IStructure::FIELD_DATE:
+					case Nette\Database\IStructure::FIELD_TIME:
+					case Nette\Database\IStructure::FIELD_DATETIME:
+					case Nette\Database\IStructure::FIELD_UNIX_TIMESTAMP:
 						$out[$column['name']] = [
 							'type' => IColumnStructure::DATE,
 						];
 						break;
-					case Nette\Database\IStructure::FIELD_BOOL :
+					case Nette\Database\IStructure::FIELD_BOOL:
 						$out[$column['name']] = [
 							'type' => IColumnStructure::BOOL,
 						];

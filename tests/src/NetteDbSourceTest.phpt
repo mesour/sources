@@ -10,6 +10,7 @@ require_once __DIR__ . '/../classes/BaseNetteDbSourceTest.php';
 
 class NetteDbSourceTest extends BaseNetteDbSourceTest
 {
+
 }
 
 $test = new NetteDbSourceTest();
