@@ -265,8 +265,7 @@ class DoctrineSource extends BaseSource
 					$tableStructure->getPrimaryKey(),
 					$this->getQueryBuilder()->getEntityManager()
 						->createQueryBuilder()->select($tablePrefix)
-						->from($table, $tablePrefix),
-					$this->columnMapping
+						->from($table, $tablePrefix)
 				);
 				$source->setDataStructure($tableStructure);
 				return $source;
