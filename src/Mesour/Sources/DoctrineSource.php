@@ -320,7 +320,13 @@ class DoctrineSource extends BaseSource
 				);
 			}
 
-			$primaryColumns = $currentTableInstance->getPrimaryKey()->getColumns();
+			$primaryKeys = $currentTableInstance->getPrimaryKey();
+			if ($primaryKeys) {
+				$primaryColumns = $primaryKeys->getColumns();
+			} else {
+				$currentMedaData = $this->getQueryBuilder()->getEntityManager()->getClassMetadata($targetEntity);
+				$primaryColumns = $currentMedaData->getIdentifierColumnNames();
+			}
 			$dataStructure->getOrCreateTableStructure($targetEntity, reset($primaryColumns));
 		}
 	}
