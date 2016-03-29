@@ -186,8 +186,7 @@ class NetteDbTableSource extends BaseSource
 					$tableStructure->getName(),
 					$tableStructure->getPrimaryKey(),
 					$this->context->table($table),
-					$this->context,
-					$this->columnMapping
+					$this->context
 				);
 				$source->setDataStructure($tableStructure);
 				return $source;

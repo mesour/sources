@@ -265,8 +265,7 @@ class DoctrineSource extends BaseSource
 					$tableStructure->getPrimaryKey(),
 					$this->getQueryBuilder()->getEntityManager()
 						->createQueryBuilder()->select($tablePrefix)
-						->from($table, $tablePrefix),
-					$this->columnMapping
+						->from($table, $tablePrefix)
 				);
 				$source->setDataStructure($tableStructure);
 				return $source;
@@ -321,7 +320,13 @@ class DoctrineSource extends BaseSource
 				);
 			}
 
-			$primaryColumns = $currentTableInstance->getPrimaryKey()->getColumns();
+			$primaryKeys = $currentTableInstance->getPrimaryKey();
+			if ($primaryKeys) {
+				$primaryColumns = $primaryKeys->getColumns();
+			} else {
+				$currentMedaData = $this->getQueryBuilder()->getEntityManager()->getClassMetadata($targetEntity);
+				$primaryColumns = $currentMedaData->getIdentifierColumnNames();
+			}
 			$dataStructure->getOrCreateTableStructure($targetEntity, reset($primaryColumns));
 		}
 	}

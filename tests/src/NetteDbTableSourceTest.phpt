@@ -8,10 +8,10 @@ require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../classes/DataSourceTestCase.php';
 require_once __DIR__ . '/../classes/BaseNetteDbSourceTest.php';
 
-class NetteDbSourceTest extends BaseNetteDbSourceTest
+class NetteDbTableSourceTest extends BaseNetteDbSourceTest
 {
 
 }
 
-$test = new NetteDbSourceTest();
+$test = new NetteDbTableSourceTest();
 $test->run();
