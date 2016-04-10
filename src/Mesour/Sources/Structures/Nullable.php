@@ -7,21 +7,30 @@
  * For full licence and copyright please view the file licence.md in root of this project
  */
 
-namespace Mesour\Sources\Structures\Columns;
+namespace Mesour\Sources\Structures;
 
 use Mesour;
 
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
  */
-class DateColumnStructure extends BaseColumnStructure
+trait Nullable
 {
 
-	use Mesour\Sources\Structures\Nullable;
+	private $nullable = false;
 
-	public function getType()
+	public function setNullable($nullable = true)
 	{
-		return self::DATE;
+		$this->nullable = (bool) $nullable;
+		return $this;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isNullable()
+	{
+		return $this->nullable;
 	}
 
 }

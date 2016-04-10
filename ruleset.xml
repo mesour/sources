@@ -58,4 +58,5 @@
         </properties>
     </rule>
     <exclude-pattern>tests/bootstrap.php</exclude-pattern>
+    <exclude-pattern>tests/environment.php</exclude-pattern>
 </ruleset>

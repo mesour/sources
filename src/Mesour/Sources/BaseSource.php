@@ -10,6 +10,7 @@
 namespace Mesour\Sources;
 
 use Mesour;
+use Mesour\Sources\Structures\Columns\BaseTableColumnStructure;
 
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
@@ -82,7 +83,9 @@ abstract class BaseSource implements ISource
 		}
 
 		if (!$this->getDataStructure()->hasTableStructure($table)) {
-			throw new InvalidArgumentException('Table structure ' . $table . ' does not exists.');
+			throw new InvalidArgumentException(
+				'Table structure ' . $table . ' does not exists. Try use method addTableToStructure on source.'
+			);
 		}
 		if (!is_callable($callback)) {
 			throw new InvalidArgumentException(
@@ -143,6 +146,18 @@ abstract class BaseSource implements ISource
 		$dataStructure = new Structures\DataStructure($tableName, $primaryKey);
 
 		$this->setDataStructure($dataStructure);
+	}
+
+	protected function addPatternToRows(BaseTableColumnStructure $columnStructure, &$items)
+	{
+		foreach ($items as $key => $item) {
+			if ($columnStructure->getPattern()) {
+				$item['_pattern'] = Helpers::parseValue($columnStructure->getPattern(), $item);
+			} else {
+				$item['_pattern'] = null;
+			}
+			$items[$key] = $item;
+		}
 	}
 
 	/**

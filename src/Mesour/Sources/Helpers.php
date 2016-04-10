@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the Mesour Editable (http://components.mesour.com/component/editable)
+ * This file is part of the Mesour Sources (http://components.mesour.com/component/sources)
  *
  * Copyright (c) 2016 Matouš Němec (http://mesour.com)
  *
@@ -18,10 +18,39 @@ use Mesour\Sources\Structures\Columns;
 class Helpers
 {
 
+	public static function parseValue($value, $data)
+	{
+		if (
+			(is_array($data) || $data instanceof \ArrayAccess || is_object($data))
+			&& strpos($value, '{') !== false
+			&& strpos($value, '}') !== false
+		) {
+			return preg_replace_callback(
+				'/(\{[^\{]+\})/',
+				function ($matches) use ($value, $data) {
+					$matches = array_unique($matches);
+					$match = reset($matches);
+					$key = substr($match, 1, strlen($match) - 2);
+					if (is_object($data)) {
+						$currentValue = isset($data->{$key}) ? $data->{$key} : '__UNDEFINED_KEY-' . $key . '__';
+					} else {
+						$currentValue = isset($data[$key]) ? $data[$key] : '__UNDEFINED_KEY-' . $key . '__';
+					}
+
+					return $currentValue;
+				},
+				$value
+			);
+		} else {
+			return $value;
+		}
+	}
+
 	public static function setStructureFromColumns(Mesour\Sources\Structures\ITableStructure $structure, array $columns)
 	{
 		foreach ($columns as $name => $item) {
 			$type = $item['type'];
+			$nullable = $item['nullable'];
 			switch ($type) {
 				case Columns\IColumnStructure::ENUM:
 					$field = $structure->addEnum($name);
@@ -30,17 +59,21 @@ class Helpers
 					}
 					break;
 				case Columns\IColumnStructure::NUMBER:
-					$structure->addNumber($name);
+					$field = $structure->addNumber($name);
 					break;
 				case Columns\IColumnStructure::DATE:
-					$structure->addDate($name);
+					$field = $structure->addDate($name);
 					break;
 				case Columns\IColumnStructure::TEXT:
-					$structure->addText($name);
+					$field = $structure->addText($name);
 					break;
 				case Columns\IColumnStructure::BOOL:
-					$structure->addBool($name);
+					$field = $structure->addBool($name);
 					break;
+			}
+
+			if (isset($field) && method_exists($field, 'setNullable')) {
+				$field->setNullable($nullable);
 			}
 		}
 	}

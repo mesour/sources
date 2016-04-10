@@ -2,10 +2,16 @@
 
 namespace Mesour\Sources\Tests;
 
+use Mesour\Sources\ArrayHash;
 use Mesour\Sources\InvalidStateException;
 use Mesour\Sources\NetteDbTableSource;
+use Mesour\Sources\Structures\Columns\ManyToManyColumnStructure;
+use Mesour\Sources\Structures\Columns\ManyToOneColumnStructure;
+use Mesour\Sources\Structures\Columns\OneToManyColumnStructure;
+use Mesour\Sources\Structures\Columns\OneToOneColumnStructure;
 use Nette\Caching\Storages\MemoryStorage;
 use Nette\Database;
+use Nette\Utils\DateTime;
 use Tester\Assert;
 
 abstract class BaseNetteDbSourceTest extends DataSourceTestCase
@@ -40,7 +46,7 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 			$this->databaseFactory->getPassword()
 		);
 
-		$cacheMemoryStorage = new MemoryStorage;
+		$cacheMemoryStorage = new MemoryStorage();
 
 		$structure = new Database\Structure($this->connection, $cacheMemoryStorage);
 		$conventions = new Database\Conventions\DiscoveredConventions($structure);
@@ -131,6 +137,7 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 			'groups',
 			'user_addresses',
 			'companies',
+			'wallets',
 			'user_companies',
 		];
 
@@ -140,42 +147,48 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 	public function testReferencedData()
 	{
 		$selection = clone $this->user;
-		$selection->select('users.*')
-			->select('group.name group_name')
-			->select('group.date group_date')
-			->select('group.type group_type');
+		$selection->select('users.*');
 
 		$source = new NetteDbTableSource($this->tableName, 'id', $selection, $this->context, $this->columnMapping);
 
-		$source->addTableToStructure('companies', 'id');
-
 		$dataStructure = $source->getDataStructure();
 
-		$dataStructure->addOneToOne('group_name', 'groups', 'name');
-		$dataStructure->addOneToOne('group_type', 'groups', 'type');
-		$dataStructure->addOneToOne('group_date', 'groups', 'date');
+		$dataStructure->renameColumn('user_addresses', 'addresses');
+		$dataStructure->renameColumn('groups', 'group');
+		$dataStructure->renameColumn('wallets', 'wallet');
 
-		$dataStructure->addOneToMany(
-			'addresses',
-			'user_addresses',
-			'user_id',
-			'{street}, {zip} {city}, {country}'
-		);
+		/** @var ManyToManyColumnStructure $companiesColumn */
+		$companiesColumn = $dataStructure->getColumn('companies');
+		$companiesColumn->setPattern('{name}');
 
-		$dataStructure->addManyToMany(
-			'companies',
-			'companies',
-			'company_id',
-			'user_companies',
-			'user_id',
-			'{street}, {zip} {city}, {country}'
-		);
+		/** @var OneToManyColumnStructure $addressesColumn */
+		$addressesColumn = $dataStructure->getColumn('addresses');
+		$addressesColumn->setPattern('{street}, {zip} {city}, {country}');
+
+		/** @var ManyToOneColumnStructure $groupColumn */
+		$groupColumn = $dataStructure->getColumn('group');
+		$groupColumn->setPattern('{name} - {type}');
+
+		/** @var OneToOneColumnStructure $walletColumn */
+		$walletColumn = $dataStructure->getColumn('wallet');
+		$walletColumn->setPattern('{amount}');
+
 		$item = $source->fetchAll();
 		Assert::equal(reset($item), $firstItem = $source->fetch());
-		Assert::count(self::FULL_COLUMN_COUNT, array_keys((array) $firstItem));
+		Assert::count(self::COLUMN_COUNT, array_keys((array) $firstItem));
 
 		Assert::count(3, $firstItem['companies']);
-		Assert::count(1, $firstItem['addresses']);
+		Assert::equal($this->getFirstExpectedCompany(), reset($firstItem['companies']));
+		Assert::equal($this->getFirstExpectedAddress(), reset($firstItem['addresses']));
+		Assert::equal($this->getFirstExpectedGroup(), $firstItem['group']);
+		Assert::equal($this->getFirstExpectedWallet(), $firstItem['wallet']);
+	}
+
+	protected function getFirstExpectedGroup()
+	{
+		$out = parent::getFirstExpectedGroup();
+		$out['date'] = new DateTime('2016-01-01');
+		return $out;
 	}
 
 }

@@ -7,3 +7,4 @@
 /tests/config.local.php
 /demo/log
 /tests/src/output
+/tests/environment.php

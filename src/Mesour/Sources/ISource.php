@@ -111,6 +111,7 @@ interface ISource
 
 	/**
 	 * @param string $table
+	 * @return static
 	 */
 	public function getReferencedSource($table);
 

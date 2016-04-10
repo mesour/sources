@@ -8,11 +8,16 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\Setup;
 use Mesour\Sources\DoctrineSource;
 use Mesour\Sources\InvalidStateException;
+use Mesour\Sources\Structures\Columns\ManyToManyColumnStructure;
+use Mesour\Sources\Structures\Columns\ManyToOneColumnStructure;
+use Mesour\Sources\Structures\Columns\OneToManyColumnStructure;
+use Mesour\Sources\Structures\Columns\OneToOneColumnStructure;
 use Mesour\Sources\Tests\Entity\Company;
 use Mesour\Sources\Tests\Entity\EmptyTable;
 use Mesour\Sources\Tests\Entity\Group;
 use Mesour\Sources\Tests\Entity\User;
 use Mesour\Sources\Tests\Entity\UserAddress;
+use Mesour\Sources\Tests\Entity\Wallet;
 use Tester\Assert;
 
 abstract class BaseDoctrineSourceTest extends DataSourceTestCase
@@ -54,6 +59,7 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 		$driver = new \Doctrine\ORM\Mapping\Driver\AnnotationDriver(new AnnotationReader(), $paths);
 		\Doctrine\Common\Annotations\AnnotationRegistry::registerLoader('class_exists');
 		$config->setMetadataDriverImpl($driver);
+		//$config->setSQLLogger(new \Doctrine\DBAL\Logging\EchoSQLLogger());
 		$conn = [
 			'driver' => 'mysqli',
 			'host' => '127.0.0.1',
@@ -113,14 +119,14 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 	{
 		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
 		$source->where('u.action = :action', ['action' => self::ACTIVE_STATUS]);
-		$this->matchWhere($source, self::FULL_USER_COUNT, $columns = self::FULL_COLUMN_COUNT);
+		$this->matchWhere($source, self::FULL_USER_COUNT, self::COLUMN_COUNT);
 	}
 
 	public function testWhereDate()
 	{
 		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
 		$source->where('u.lastLogin > :last_login', ['last_login' => self::DATE_BIGGER]);
-		$this->matchWhereDate($source, self::FULL_USER_COUNT, $columns = self::FULL_COLUMN_COUNT);
+		$this->matchWhereDate($source, self::FULL_USER_COUNT, self::COLUMN_COUNT);
 	}
 
 	public function testEmpty()
@@ -158,9 +164,66 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 			Group::class,
 			UserAddress::class,
 			Company::class,
+			Wallet::class,
 		];
 
+		$dataStructure = $source->getDataStructure();
+
+		/** @var ManyToOneColumnStructure $group */
+		$group = $dataStructure->getColumn('group');
+		$group->setPattern('{name} - {type}');
+
 		$this->assertDataStructure($source, $tableNames, User::class);
+	}
+
+	public function testReferencedData()
+	{
+		$selection = clone $this->user;
+		$selection->select('users.*');
+
+		$source = new DoctrineSource(User::class, self::OWN_PRIMARY_KEY, $this->user, $this->columnMapping);
+
+		$dataStructure = $source->getDataStructure();
+
+		/** @var ManyToManyColumnStructure $companiesColumn */
+		$companiesColumn = $dataStructure->getColumn('companies');
+		$companiesColumn->setPattern('{name}');
+
+		/** @var OneToManyColumnStructure $addressesColumn */
+		$addressesColumn = $dataStructure->getColumn('addresses');
+		$addressesColumn->setPattern('{street}, {zip} {city}, {country}');
+
+		/** @var ManyToOneColumnStructure $groupColumn */
+		$groupColumn = $dataStructure->getColumn('group');
+		$groupColumn->setPattern('{name} - {type}');
+
+		/** @var OneToOneColumnStructure $walletColumn */
+		$walletColumn = $dataStructure->getColumn('wallet');
+		$walletColumn->setPattern('{amount}');
+
+		$item = $source->fetchAll();
+		Assert::equal(reset($item), $firstItem = $source->fetch());
+		Assert::count(self::COLUMN_COUNT, array_keys((array) $firstItem));
+
+		Assert::count(3, $firstItem['companies']);
+		Assert::equal($this->getFirstExpectedCompany(), reset($firstItem['companies']));
+		Assert::equal($this->getFirstExpectedAddress(), reset($firstItem['addresses']));
+		Assert::equal($this->getFirstExpectedGroup(), $firstItem['group']);
+		Assert::equal($this->getFirstExpectedWallet(), $firstItem['wallet']);
+	}
+
+	protected function getFirstExpectedCompany()
+	{
+		$out = parent::getFirstExpectedCompany();
+		$out['verified'] = true;
+		return $out;
+	}
+
+	protected function getFirstExpectedGroup()
+	{
+		$out = parent::getFirstExpectedGroup();
+		$out['date'] = new \DateTime('2016-01-01');
+		return $out;
 	}
 
 }

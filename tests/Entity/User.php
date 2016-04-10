@@ -22,14 +22,25 @@ class User
 
 	/**
 	 * @var integer
-	 *
+	 * @ORM\Column(name="group_id", type="integer", nullable=true)
+	 */
+	private $groupId;
+
+	/**
+	 * @var integer
+	 * @ORM\Column(name="wallet_id", type="integer", nullable=true)
+	 */
+	private $walletId;
+
+	/**
+	 * @var integer
 	 * @ORM\Column(name="action", type="integer", nullable=true)
 	 */
 	private $action;
 
 	/**
 	 * @var string
-	 * @ORM\Column(name="role", type="enum", columnDefinition="enum('admin', 'moderator')", nullable=false)
+	 * @ORM\Column(name="role", type="enum", columnDefinition="enum('admin', 'moderator')", nullable=true)
 	 */
 	private $role;
 
@@ -89,7 +100,7 @@ class User
 
 	/**
 	 * @var Group
-	 * @ORM\OneToOne(targetEntity="Group", mappedBy="user")
+	 * @ORM\ManyToOne(targetEntity="Group", inversedBy="user")
 	 * @ORM\JoinColumn(name="group_id", referencedColumnName="id")
 	 */
 	private $group;
@@ -110,6 +121,13 @@ class User
 	 * )
 	 */
 	private $companies;
+
+	/**
+	 * @var Wallet
+	 * @ORM\OneToOne(targetEntity="Wallet", mappedBy="user")
+	 * @ORM\JoinColumn(name="wallet_id", referencedColumnName="id", nullable=false, onDelete="CASCADE")
+	 */
+	private $wallet;
 
 	/**
 	 * @return int
@@ -155,10 +173,24 @@ class User
 			/** @var Company $company */
 			$companies[] = $company->toArray();
 		}
-		$group = $this->group->toArray();
+
+		if ($this->group) {
+			$group = $this->group->toArray();
+		} else {
+			$group = null;
+		}
+
+		if ($this->wallet) {
+			$wallet = $this->wallet->toArray();
+		} else {
+			$wallet = null;
+		}
+
 		return [
 			'id' => $this->id,
 			'action' => $this->action,
+			'group_id' => $this->groupId,
+			'wallet_id' => $this->walletId,
 			'name' => $this->name,
 			'surname' => $this->surname,
 			'amount' => $this->amount,
@@ -169,12 +201,10 @@ class User
 			'last_login' => $this->lastLogin,
 			'role' => $this->role,
 			'has_pro' => (bool) $this->hasPro,
-			'group_name' => $group['name'],
-			'group_type' => $group['type'],
-			'group_date' => $group['date'],
 			'addresses' => $addresses,
 			'companies' => $companies,
 			'group' => $group,
+			'wallet' => $wallet,
 		];
 	}
 

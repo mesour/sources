@@ -11,7 +11,9 @@ namespace Mesour\Sources;
 
 use Mesour\Sources\Structures\Columns\IColumnStructure;
 use Mesour\Sources\Structures\Columns\ManyToManyColumnStructure;
+use Mesour\Sources\Structures\Columns\ManyToOneColumnStructure;
 use Mesour\Sources\Structures\Columns\OneToManyColumnStructure;
+use Mesour\Sources\Structures\Columns\OneToOneColumnStructure;
 use Nette;
 
 /**
@@ -239,7 +241,11 @@ class NetteDbTableSource extends BaseSource
 
 		$joined = [];
 		foreach ($this->getDataStructure()->getColumns() as $column) {
-			if ($column instanceof OneToManyColumnStructure) {
+			if (
+				$column instanceof OneToOneColumnStructure
+				|| $column instanceof OneToManyColumnStructure
+				|| $column instanceof ManyToOneColumnStructure
+			) {
 				$source = $this->getReferencedSource($column->getTableStructure()->getName());
 				$source->findByIds($ids);
 				$joined[$column->getName()] = $source->fetchAll();
@@ -260,15 +266,48 @@ class NetteDbTableSource extends BaseSource
 		foreach ($arr as $key => $item) {
 			$newValues = [];
 			foreach ($this->getDataStructure()->getColumns() as $column) {
+				$isManyToMany = $column instanceof ManyToManyColumnStructure;
+				if ($column instanceof OneToManyColumnStructure || $isManyToMany) {
+					$newValues[$column->getName()] = [];
 
-				if ($column instanceof OneToManyColumnStructure || $column instanceof ManyToManyColumnStructure) {
+					foreach ($joined[$column->getName()] as $currentItem) {
+						if (
+							$item[$column->getTableStructure()->getPrimaryKey()]
+							=== $currentItem[$column->getReferencedColumn()]
+						) {
+							$forSave = (array) $currentItem;
+							if ($isManyToMany) {
+								unset($forSave[$column->getReferencedColumn()]);
+							}
+
+							$newValues[$column->getName()][] = $this->makeArrayHash($forSave);
+						}
+					}
+					$this->addPatternToRows($column, $newValues[$column->getName()]);
+				} elseif ($column instanceof OneToOneColumnStructure) {
 					$newValues[$column->getName()] = [];
 					foreach ($joined[$column->getName()] as $currentItem) {
 						if (
 							$item[$column->getTableStructure()->getPrimaryKey()]
 							=== $currentItem[$column->getReferencedColumn()]
 						) {
-							$newValues[$column->getName()][] = $currentItem;
+							$currentItems = [$currentItem];
+							$this->addPatternToRows($column, $currentItems);
+							$newValues[$column->getName()] = reset($currentItems);
+							break;
+						}
+					}
+				} elseif ($column instanceof ManyToOneColumnStructure) {
+					$newValues[$column->getName()] = [];
+					foreach ($joined[$column->getName()] as $currentItem) {
+						if (
+							$item[$column->getReferencedColumn()]
+							=== $currentItem[$column->getTableStructure()->getPrimaryKey()]
+						) {
+							$currentItems = [$currentItem];
+							$this->addPatternToRows($column, $currentItems);
+							$newValues[$column->getName()] = reset($currentItems);
+							break;
 						}
 					}
 
@@ -290,16 +329,64 @@ class NetteDbTableSource extends BaseSource
 
 		$columns = $structure->getColumns($this->getTableName());
 
-		$determinedColumns = $this->determineFromColumns($columns);
+		Helpers::setStructureFromColumns($dataStructure, $this->determineFromColumns($columns));
 
-		Helpers::setStructureFromColumns($dataStructure, $determinedColumns);
-
-		foreach ($structure->getBelongsToReference($tableName) as $table) {
+		foreach ($structure->getBelongsToReference($tableName) as $key => $table) {
 			$dataStructure->getOrCreateTableStructure($table, $structure->getPrimaryKey($table));
+
+			$targetReference = $structure->getBelongsToReference($table);
+			$hasOneToOne = array_search($tableName, $targetReference);
+			if ($hasOneToOne) {
+				$dataStructure->addOneToOne($table, $table, $hasOneToOne);
+			} else {
+				$dataStructure->addManyToOne($table, $table, $key);
+			}
 		}
 
 		foreach ($structure->getHasManyReference($tableName) as $table => $keys) {
 			$dataStructure->getOrCreateTableStructure($table, $structure->getPrimaryKey($table));
+
+			$sourceReference = $structure->getBelongsToReference($tableName);
+			if (in_array($table, $sourceReference)) {
+				continue;
+			}
+
+			$targetReference = $structure->getBelongsToReference($table);
+
+			if (count($targetReference) > 1) {
+				$match = null;
+				foreach ($keys as $key => $targetTable) {
+					$match = array_search($tableName, $targetReference);
+					if ($match) {
+						unset($targetReference[$match]);
+						break;
+					}
+				}
+
+				if ($match) {
+					$arrayKeys = array_keys($targetReference);
+					$selfColumn = reset($arrayKeys);
+					$currentValue = reset($targetReference);
+					$dataStructure->getOrCreateTableStructure($currentValue, $structure->getPrimaryKey($currentValue));
+
+					$dataStructure->addManyToMany($currentValue, $currentValue, $selfColumn, $table, $match);
+
+					continue;
+				}
+			}
+
+			$match = null;
+			foreach ($keys as $key => $targetTable) {
+				$match = array_search($tableName, $targetReference);
+				if ($match) {
+					unset($targetReference[$match]);
+					break;
+				}
+			}
+
+			if ($match) {
+				$dataStructure->addOneToMany($table, $table, $match);
+			}
 		}
 	}
 
@@ -351,6 +438,10 @@ class NetteDbTableSource extends BaseSource
 						];
 						break;
 				}
+			}
+
+			if (isset($out[$column['name']])) {
+				$out[$column['name']]['nullable'] = $column['nullable'];
 			}
 		}
 		return $out;

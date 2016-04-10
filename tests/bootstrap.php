@@ -8,6 +8,10 @@ define('DISABLE_AUTOLOAD', true);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+if (file_exists(__DIR__ . '/environment.php')) {
+	require_once __DIR__ . '/environment.php';
+}
+
 $loader = new Nette\Loaders\RobotLoader;
 $loader->addDirectory(__DIR__ . '/../src');
 $loader->addDirectory(__DIR__ . '/classes');

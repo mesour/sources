@@ -5,10 +5,10 @@ namespace Mesour\Sources\Tests\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Table(name="user_addresses")
+ * @ORM\Table(name="wallets")
  * @ORM\Entity
  */
-class UserAddress
+class Wallet
 {
 
 	/**
@@ -21,37 +21,25 @@ class UserAddress
 
 	/**
 	 * @var integer
-	 * @ORM\Column(name="user_id", type="integer", nullable=true)
+	 * @ORM\Column(name="user_id", type="integer", nullable=false)
 	 */
 	private $userId;
 
 	/**
-	 * @var string
-	 * @ORM\Column(name="street", type="string", length=255, nullable=false)
+	 * @var int
+	 * @ORM\Column(name="amount", type="float", nullable=false)
 	 */
-	private $street;
+	private $amount;
 
 	/**
 	 * @var string
-	 * @ORM\Column(name="city", type="string", length=255, nullable=false)
+	 * @ORM\Column(name="currency", type="enum", columnDefinition="enum('CZK', 'EUR')", nullable=false)
 	 */
-	private $city;
-
-	/**
-	 * @var string
-	 * @ORM\Column(name="zip", type="string", length=255, nullable=false)
-	 */
-	private $zip;
-
-	/**
-	 * @var string
-	 * @ORM\Column(name="country", type="string", length=255, nullable=false)
-	 */
-	private $country;
+	private $currency;
 
 	/**
 	 * @var User
-	 * @ORM\ManyToOne(targetEntity="User", inversedBy="addresses")
+	 * @ORM\OneToOne(targetEntity="User", mappedBy="wallet")
 	 * @ORM\JoinColumn(name="user_id", referencedColumnName="id", nullable=false, onDelete="CASCADE")
 	 */
 	private $user;
@@ -77,10 +65,8 @@ class UserAddress
 		return [
 			'id' => $this->id,
 			'user_id' => $this->user->getId(),
-			'street' => $this->street,
-			'city' => $this->city,
-			'zip' => $this->zip,
-			'country' => $this->country,
+			'amount' => $this->amount,
+			'currency' => $this->currency,
 		];
 	}
 

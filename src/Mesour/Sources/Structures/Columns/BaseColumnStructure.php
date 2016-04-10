@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the Mesour Editable (http://components.mesour.com/component/editable)
+ * This file is part of the Mesour Sources (http://components.mesour.com/component/sources)
  *
  * Copyright (c) 2016 Matouš Němec (http://mesour.com)
  *
@@ -29,6 +29,16 @@ abstract class BaseColumnStructure implements IColumnStructure
 	public function getName()
 	{
 		return $this->name;
+	}
+
+	/**
+	 * @param string $name
+	 * @internal
+	 */
+	public function setName($name)
+	{
+		$this->name = $name;
+		return $this;
 	}
 
 	public function setParameter($key, $value)
