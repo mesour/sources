@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the Mesour Editable (http://components.mesour.com/component/editable)
+ * This file is part of the Mesour Sources (http://components.mesour.com/component/sources)
  *
  * Copyright (c) 2016 Matouš Němec (http://mesour.com)
  *

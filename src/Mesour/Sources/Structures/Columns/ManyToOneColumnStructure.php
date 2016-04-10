@@ -14,14 +14,14 @@ use Mesour;
 /**
  * @author Matouš Němec <matous.nemec@mesour.com>
  */
-class DateColumnStructure extends BaseColumnStructure
+class ManyToOneColumnStructure extends BaseTableColumnStructure
 {
 
 	use Mesour\Sources\Structures\Nullable;
 
 	public function getType()
 	{
-		return self::DATE;
+		return self::MANY_TO_ONE;
 	}
 
 }

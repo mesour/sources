@@ -46,11 +46,23 @@ INSERT INTO `groups` (`id`, `name`, `type`, `date`, `members`) VALUES
 (2,	'Group 2',	'second',	'2016-03-05 00:00:00',	6),
 (3,	'Group 3',	'second',	'2016-05-09 00:00:00',	7);
 
+DROP TABLE IF EXISTS `wallets`;
+CREATE TABLE `wallets` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `amount` double NOT NULL DEFAULT '0',
+  `currency` enum('CZK','EUR') NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `wallets_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `action` int(10) unsigned DEFAULT NULL,
   `group_id` int(10) unsigned NOT NULL,
+  `wallet_id` int(10) unsigned NULL,
   `role` enum('admin','moderator') NOT NULL,
   `name` varchar(64) DEFAULT NULL,
   `surname` varchar(64) NOT NULL,
@@ -64,30 +76,38 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`),
   KEY `action` (`action`),
   KEY `group_id` (`group_id`),
-  CONSTRAINT `users_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`) ON UPDATE CASCADE
+  CONSTRAINT `users_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `wallet_ibfk_1` FOREIGN KEY (`wallet_id`) REFERENCES `wallets` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `users` (`id`, `action`, `group_id`, `role`, `name`, `surname`, `email`, `last_login`, `amount`, `avatar`, `order`, `timestamp`, `has_pro`) VALUES
-(1,	1,	1,	'admin',	'John',	'Doe',	'john.doe@test.xx',	NULL,	0,	'/avatar/01.png',	100,	1418255325,	0),
-(2,	1,	2,	'moderator',	'Peter',	'Larson',	'peter.larson@test.xx',	'2014-09-09 13:37:32',	15220.654,	'/avatar/02.png',	160,	1418255330,	0),
-(3,	1,	2,	'admin',	'Claude',	'Graves',	'claude.graves@test.xx',	'2014-09-02 14:17:32',	9876.465498,	'/avatar/03.png',	180,	1418255311,	0),
-(4,	0,	3,	'moderator',	'Stuart',	'Norman',	'stuart.norman@test.xx',	'2014-09-09 18:39:18',	98766.2131,	'/avatar/04.png',	120,	1418255328,	0),
-(5,	1,	1,	'admin',	'Kathy',	'Arnold',	'kathy.arnold@test.xx',	'2014-09-07 10:24:07',	456.987,	'/avatar/05.png',	140,	1418155313,	0),
-(6,	0,	3,	'moderator',	'Jan',	'Wilson',	'jan.wilson@test.xx',	'2014-09-03 13:15:22',	123,	'/avatar/06.png',	150,	1418255318,	0),
-(7,	0,	1,	'moderator',	'Alberta',	'Erickson',	'alberta.erickson@test.xx',	'2014-08-06 13:37:17',	98753.654,	'/avatar/07.png',	110,	1418255327,	0),
-(8,	1,	3,	'admin',	'Ada',	'Wells',	'ada.wells@test.xx',	'2014-08-12 11:25:16',	852.3654,	'/avatar/08.png',	70,	1418255332,	0),
-(9,	0,	2,	'admin',	'Ethel',	'Figueroa',	'ethel.figueroa@test.xx',	'2014-09-05 10:23:26',	45695.986,	'/avatar/09.png',	20,	1418255305,	0),
-(10,	1,	3,	'moderator',	'Ian',	'Goodwin',	'ian.goodwin@test.xx',	'2014-09-04 12:26:19',	1236.9852,	'/avatar/10.png',	130,	1418255331,	0),
-(11,	1,	2,	'moderator',	'Francis',	'Hayes',	'francis.hayes@test.xx',	'2014-09-03 10:16:17',	5498.345,	'/avatar/11.png',	0,	1418255293,	0),
-(12,	0,	1,	'moderator',	'Erma',	'Burns',	'erma.burns@test.xx',	'2014-07-02 15:42:15',	63287.9852,	'/avatar/12.png',	60,	1418255316,	0),
-(13,	1,	3,	'moderator',	'Kristina',	'Jenkins',	'kristina.jenkins@test.xx',	'2014-08-20 14:39:43',	74523.96549,	'/avatar/13.png',	40,	1418255334,	0),
-(14,	0,	3,	'admin',	'Virgil',	'Hunt',	'virgil.hunt@test.xx',	'2014-08-12 16:09:38',	65654.6549,	'/avatar/14.png',	30,	1418255276,	0),
-(15,	1,	1,	'moderator',	'Max',	'Martin',	'max.martin@test.xx',	'2014-09-01 12:14:20',	541236.5495,	'/avatar/15.png',	170,	1418255317,	0),
-(16,	0,	2,	'admin',	'Melody',	'Manning',	'melody.manning@test.xx',	'2014-09-02 12:26:20',	9871.216,	'/avatar/16.png',	50,	1418255281,	0),
-(17,	0,	3,	'moderator',	'Catherine',	'Todd',	'catherine.todd@test.xx',	'2014-06-11 15:14:39',	100.2,	'/avatar/17.png',	10,	1418255313,	0),
-(18,	0,	1,	'admin',	'Douglas',	'Stanley',	'douglas.stanley@test.xx',	'2014-04-16 15:22:18',	900,	'/avatar/18.png',	90,	1418255332,	0),
-(19,	1,	2,	'admin',	'Patti',	'Diaz',	'patti.diaz@test.xx',	'2014-09-11 12:17:16',	1500,	'/avatar/19.png',	80,	1418255275,	0),
-(20,	0,	1,	'moderator',	'John',	'Petterson',	'john.petterson@test.xx',	'2014-10-10 10:10:10',	2500,	'/avatar/20.png',	190,	1418255275,	0);
+INSERT INTO `users` (`id`, `action`, `group_id`, `wallet_id`, `role`, `name`, `surname`, `email`, `last_login`, `amount`, `avatar`, `order`, `timestamp`, `has_pro`) VALUES
+(1,	1,	1,	NULL,	'admin',	'John',	'Doe',	'john.doe@test.xx',	NULL,	0,	'/avatar/01.png',	100,	1418255325,	0),
+(2,	1,	2,	NULL,	'moderator',	'Peter',	'Larson',	'peter.larson@test.xx',	'2014-09-09 13:37:32',	15220.654,	'/avatar/02.png',	160,	1418255330,	0),
+(3,	1,	2,	NULL,	'admin',	'Claude',	'Graves',	'claude.graves@test.xx',	'2014-09-02 14:17:32',	9876.465498,	'/avatar/03.png',	180,	1418255311,	0),
+(4,	0,	3,	NULL,	'moderator',	'Stuart',	'Norman',	'stuart.norman@test.xx',	'2014-09-09 18:39:18',	98766.2131,	'/avatar/04.png',	120,	1418255328,	0),
+(5,	1,	1,	NULL,	'admin',	'Kathy',	'Arnold',	'kathy.arnold@test.xx',	'2014-09-07 10:24:07',	456.987,	'/avatar/05.png',	140,	1418155313,	0),
+(6,	0,	3,	NULL,	'moderator',	'Jan',	'Wilson',	'jan.wilson@test.xx',	'2014-09-03 13:15:22',	123,	'/avatar/06.png',	150,	1418255318,	0),
+(7,	0,	1,	NULL,	'moderator',	'Alberta',	'Erickson',	'alberta.erickson@test.xx',	'2014-08-06 13:37:17',	98753.654,	'/avatar/07.png',	110,	1418255327,	0),
+(8,	1,	3,	NULL,	'admin',	'Ada',	'Wells',	'ada.wells@test.xx',	'2014-08-12 11:25:16',	852.3654,	'/avatar/08.png',	70,	1418255332,	0),
+(9,	0,	2,	NULL,	'admin',	'Ethel',	'Figueroa',	'ethel.figueroa@test.xx',	'2014-09-05 10:23:26',	45695.986,	'/avatar/09.png',	20,	1418255305,	0),
+(10,	1,	3,	NULL,	'moderator',	'Ian',	'Goodwin',	'ian.goodwin@test.xx',	'2014-09-04 12:26:19',	1236.9852,	'/avatar/10.png',	130,	1418255331,	0),
+(11,	1,	2,	NULL,	'moderator',	'Francis',	'Hayes',	'francis.hayes@test.xx',	'2014-09-03 10:16:17',	5498.345,	'/avatar/11.png',	0,	1418255293,	0),
+(12,	0,	1,	NULL,	'moderator',	'Erma',	'Burns',	'erma.burns@test.xx',	'2014-07-02 15:42:15',	63287.9852,	'/avatar/12.png',	60,	1418255316,	0),
+(13,	1,	3,	NULL,	'moderator',	'Kristina',	'Jenkins',	'kristina.jenkins@test.xx',	'2014-08-20 14:39:43',	74523.96549,	'/avatar/13.png',	40,	1418255334,	0),
+(14,	0,	3,	NULL,	'admin',	'Virgil',	'Hunt',	'virgil.hunt@test.xx',	'2014-08-12 16:09:38',	65654.6549,	'/avatar/14.png',	30,	1418255276,	0),
+(15,	1,	1,	NULL,	'moderator',	'Max',	'Martin',	'max.martin@test.xx',	'2014-09-01 12:14:20',	541236.5495,	'/avatar/15.png',	170,	1418255317,	0),
+(16,	0,	2,	NULL,	'admin',	'Melody',	'Manning',	'melody.manning@test.xx',	'2014-09-02 12:26:20',	9871.216,	'/avatar/16.png',	50,	1418255281,	0),
+(17,	0,	3,	NULL,	'moderator',	'Catherine',	'Todd',	'catherine.todd@test.xx',	'2014-06-11 15:14:39',	100.2,	'/avatar/17.png',	10,	1418255313,	0),
+(18,	0,	1,	NULL,	'admin',	'Douglas',	'Stanley',	'douglas.stanley@test.xx',	'2014-04-16 15:22:18',	900,	'/avatar/18.png',	90,	1418255332,	0),
+(19,	1,	2,	NULL,	'admin',	'Patti',	'Diaz',	'patti.diaz@test.xx',	'2014-09-11 12:17:16',	1500,	'/avatar/19.png',	80,	1418255275,	0),
+(20,	0,	1,	NULL,	'moderator',	'John',	'Petterson',	'john.petterson@test.xx',	'2014-10-10 10:10:10',	2500,	'/avatar/20.png',	190,	1418255275,	0);
+
+INSERT INTO `wallets` (`user_id`, `amount`, `currency`) VALUES
+('1', '153.85', 'EUR'),
+('2', '0.85', 'CZK');
+
+UPDATE `users` SET `wallet_id` = 1 WHERE id = 1;
+UPDATE `users` SET `wallet_id` = 2 WHERE id = 3;
 
 DROP TABLE IF EXISTS `user_addresses`;
 CREATE TABLE `user_addresses` (

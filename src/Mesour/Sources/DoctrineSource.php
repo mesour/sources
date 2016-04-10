@@ -11,12 +11,18 @@ namespace Mesour\Sources;
 
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
+use Mesour\Sources\Structures\Columns\BaseTableColumnStructure;
 use Mesour\Sources\Structures\Columns\IColumnStructure;
+use Mesour\Sources\Structures\Columns\ManyToManyColumnStructure;
+use Mesour\Sources\Structures\Columns\ManyToOneColumnStructure;
+use Mesour\Sources\Structures\Columns\OneToManyColumnStructure;
+use Mesour\Sources\Structures\Columns\OneToOneColumnStructure;
 
 /**
  * @author  Martin Procházka <juniwalk@outlook.cz>
@@ -216,7 +222,7 @@ class DoctrineSource extends BaseSource
 				return false;
 			}
 			$result = $this->fixResult($this->getEntityArrayAsArrays([$entity]), true);
-			return reset($result);
+			return $result;
 		} catch (NoResultException $e) {
 			return false;
 		}
@@ -281,9 +287,10 @@ class DoctrineSource extends BaseSource
 		) {
 			return parent::getTableColumns($table, $internal);
 		}
-		$columns = $this->queryBuilder->getEntityManager()->getConnection()->getSchemaManager()
-			->listTableColumns($this->getTableNameFromClassName($table));
-		return $this->determineFromColumns($columns, $table);
+
+		return $this->determineFromColumns(
+			$this->queryBuilder->getEntityManager()->getClassMetadata($table)
+		);
 	}
 
 	protected function initializeDataStructure($tableName, $primaryKey)
@@ -293,76 +300,119 @@ class DoctrineSource extends BaseSource
 		$this->setDataStructure($dataStructure);
 
 		$entityManager = $this->queryBuilder->getEntityManager();
-		$schemaManager = $entityManager->getConnection()->getSchemaManager();
 
-		$tables = $schemaManager->listTables();
-		$columns = $schemaManager->listTableColumns($this->getTableNameFromClassName($tableName));
+		$classMetadata = $entityManager->getClassMetadata($tableName);
 
-		$determinedColumns = $this->determineFromColumns($columns, $tableName);
+		Helpers::setStructureFromColumns($dataStructure, $this->determineFromColumns($classMetadata));
 
-		Helpers::setStructureFromColumns($dataStructure, $determinedColumns);
+		foreach ($classMetadata->getAssociationNames() as $associationName) {
+			$targetClass = $classMetadata->getAssociationTargetClass($associationName);
+			$targetMetadata = $entityManager->getClassMetadata($targetClass);
 
-		$classMetaData = $this->getQueryBuilder()->getEntityManager()->getClassMetadata($tableName);
+			$associations = $classMetadata->getAssociationsByTargetClass($targetClass);
 
-		foreach ($classMetaData->getAssociationMappings() as $associationMapping) {
-			$targetEntity = $associationMapping['targetEntity'];
+			$primaryColumns = $targetMetadata->getIdentifierColumnNames();
 
-			$currentTableInstance = null;
-			foreach ($tables as $currentTable) {
-				if ($currentTable->getName() === $this->getTableNameFromClassName($targetEntity)) {
-					$currentTableInstance = $currentTable;
-					break;
+			foreach ($associations as $association) {
+				$dataStructure->getOrCreateTableStructure($targetClass, reset($primaryColumns));
+
+				$associationsType = $association['type'];
+				if ($associationsType === $classMetadata::ONE_TO_ONE) {
+					if ($association['sourceEntity'] === $tableName) {
+						$referencedColumn = reset($association['targetToSourceKeyColumns']);
+					}
+					if (!isset($referencedColumn)) {
+						throw new InvalidStateException(
+							sprintf(
+								'Can not find referenced column name for field %s.',
+								$associationName
+							)
+						);
+					}
+					$dataStructure->addOneToOne($associationName, $targetClass, $referencedColumn);
+				} elseif ($associationsType === $classMetadata::MANY_TO_ONE) {
+					if ($association['sourceEntity'] === $tableName) {
+						$referencedColumn = reset($association['targetToSourceKeyColumns']);
+					}
+					if (!isset($referencedColumn)) {
+						throw new InvalidStateException(
+							sprintf(
+								'Can not find referenced column name for field %s.',
+								$associationName
+							)
+						);
+					}
+					$dataStructure->addManyToOne($associationName, $targetClass, $referencedColumn);
+				} elseif ($associationsType === $classMetadata::ONE_TO_MANY) {
+					foreach ($targetMetadata->getAssociationMappings() as $joinedAssociation) {
+						if ($joinedAssociation['inversedBy'] === $associationName) {
+							$referencedColumn = reset($joinedAssociation['targetToSourceKeyColumns']);
+						}
+					}
+					if (!isset($referencedColumn)) {
+						throw new InvalidStateException(
+							sprintf(
+								'Can not find referenced column name for field %s. Is `inversedBy` set in property annotation?',
+								$associationName
+							)
+						);
+					}
+					$dataStructure->addOneToMany($associationName, $targetClass, $referencedColumn);
+				} elseif ($associationsType === $classMetadata::MANY_TO_MANY) {
+					if (!isset($association['joinTable'])) {
+						throw new InvalidStateException(
+							sprintf(
+								'Can not find joinColumn settings for field %s. Is `joinColumn` set in property annotation?',
+								$associationName
+							)
+						);
+					}
+					$joinTable = $association['joinTable'];
+					$joinColumn = reset($joinTable['joinColumns']);
+					$inverseJoinColumn = reset($joinTable['inverseJoinColumns']);
+					$dataStructure->addManyToMany(
+						$associationName,
+						$targetClass,
+						$inverseJoinColumn['name'],
+						$joinTable['name'],
+						$joinColumn['name']
+					);
 				}
 			}
-			if (!$currentTableInstance) {
-				throw new TableNotExistException(
-					sprintf('Table for entity %s not exists.', $targetEntity)
-				);
-			}
-
-			$primaryKeys = $currentTableInstance->getPrimaryKey();
-			if ($primaryKeys) {
-				$primaryColumns = $primaryKeys->getColumns();
-			} else {
-				$currentMedaData = $this->getQueryBuilder()->getEntityManager()->getClassMetadata($targetEntity);
-				$primaryColumns = $currentMedaData->getIdentifierColumnNames();
-			}
-			$dataStructure->getOrCreateTableStructure($targetEntity, reset($primaryColumns));
 		}
 	}
 
-	private function determineFromColumns(array $columns, $table)
+	private function determineFromColumns(ClassMetadata $classMetadata)
 	{
-		$classMetaData = $this->getQueryBuilder()->getEntityManager()->getClassMetadata($table);
-
 		$out = [];
 		/** @var Column $column */
-		foreach ($columns as $column) {
+		foreach ($classMetadata->getFieldNames() as $fieldName) {
 			$fieldMapping = [];
 			try {
-				$fieldMapping = $classMetaData->getFieldMapping($classMetaData->getFieldName($column->getName()));
+				$fieldMapping = $classMetadata->getFieldMapping($fieldName);
 			} catch (MappingException $e) {
 				$fieldMapping['type'] = 'undefined';
 			}
+			$columnName = $classMetadata->getColumnName($fieldName);
+			$type = $classMetadata->getTypeOfField($fieldName);
+			$isNullable = $classMetadata->isNullable($fieldName);
 
-			if (strtolower($fieldMapping['type']) === 'enum') {
-				$out[$column->getName()] = [
+			if (strtolower($type) === 'enum') {
+				$out[$columnName] = [
 					'type' => IColumnStructure::ENUM,
 				];
 				$enum = $fieldMapping['columnDefinition'];
 				$options = str_getcsv(str_replace('enum(', '', substr($enum, 0, strlen($enum) - 1)), ',', "'");
 
-				$out[$column->getName()]['values'] = [];
+				$out[$columnName]['values'] = [];
 				foreach ($options as $option) {
-					$out[$column->getName()]['values'][] = $option;
+					$out[$columnName]['values'][] = $option;
 				}
 			} else {
-				$type = $column->getType()->getName();
-
 				switch ($type) {
 					case Type::STRING:
 					case Type::TEXT:
-						$out[$column->getName()] = [
+						$out[$columnName] = [
 							'type' => IColumnStructure::TEXT,
 						];
 						break;
@@ -371,7 +421,7 @@ class DoctrineSource extends BaseSource
 					case Type::SMALLINT:
 					case Type::BIGINT:
 					case Type::DECIMAL:
-						$out[$column->getName()] = [
+						$out[$columnName] = [
 							'type' => IColumnStructure::NUMBER,
 						];
 						break;
@@ -379,16 +429,19 @@ class DoctrineSource extends BaseSource
 					case Type::DATETIMETZ:
 					case Type::DATE:
 					case Type::TIME:
-						$out[$column->getName()] = [
+						$out[$columnName] = [
 							'type' => IColumnStructure::DATE,
 						];
 						break;
 					case Type::BOOLEAN:
-						$out[$column->getName()] = [
+						$out[$columnName] = [
 							'type' => IColumnStructure::BOOL,
 						];
 						break;
 				}
+			}
+			if (isset($out[$columnName])) {
+				$out[$columnName]['nullable'] = $isNullable;
 			}
 		}
 		return $out;
@@ -437,14 +490,25 @@ class DoctrineSource extends BaseSource
 	{
 		if (count($val) > 0) {
 			$out = [];
-			if ($fetch) {
-				$val = [$val];
-			}
-			foreach ($val as $item) {
-				$out[] = $this->makeArrayHash($item);
-				if ($fetch) {
-					return reset($out);
+			foreach ($val as $key => $item) {
+				$current = $item;
+				foreach ($this->getDataStructure()->getColumns() as $column) {
+					if ($column instanceof OneToOneColumnStructure || $column instanceof ManyToOneColumnStructure) {
+						$items = [$current[$column->getName()]];
+						$this->addPatternToRows($column, $items);
+						$current[$column->getName()] = reset($items);
+					} elseif (
+						$column instanceof ManyToManyColumnStructure
+						|| $column instanceof OneToManyColumnStructure
+					) {
+						$this->addPatternToRows($column, $current[$column->getName()]);
+					}
 				}
+				$arrayHash = $this->makeArrayHash($current);
+				if ($fetch) {
+					return $arrayHash;
+				}
+				$out[] = $arrayHash;
 			}
 			return $out;
 		}

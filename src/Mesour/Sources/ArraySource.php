@@ -18,9 +18,7 @@ use Mesour\Sources\Structures\Columns;
 class ArraySource extends BaseSource
 {
 
-	const DATE = 'date';
-
-	const _DATE_MARK = '__date_';
+	const DATE_MARK = '__date_';
 
 	/** @var Mesour\ArrayManage\Searcher\Select */
 	protected $select;
@@ -57,7 +55,7 @@ class ArraySource extends BaseSource
 			&& $this->getDataStructure()->getColumn($column)->getType() === Columns\IColumnStructure::DATE
 		) {
 			$value = $this->fixDate($value);
-			$column = self::_DATE_MARK . $column;
+			$column = self::DATE_MARK . $column;
 		}
 
 		$this->getSelect()->where($column, $value, $condition, $operator);
@@ -178,22 +176,40 @@ class ArraySource extends BaseSource
 		return $this;
 	}
 
-	public function attachTable($table, $key, $columnAlias, $left = false)
+	public function attachOneToOne(Columns\OneToOneColumnStructure $columnStructure, $left = false)
 	{
-		$source = $this->getReferencedSource($table);
+		$this->attachToOneRelation($columnStructure, $left);
+		return $this;
+	}
+
+	public function attachManyToOne(Columns\ManyToOneColumnStructure $columnStructure, $left = false)
+	{
+		$this->attachToOneRelation($columnStructure, $left);
+		return $this;
+	}
+
+	public function attachOneToMany(Columns\OneToManyColumnStructure $columnStructure, $left = false)
+	{
+		$source = $this->getReferencedSource($columnStructure->getTableStructure()->getName());
 		foreach ($this->dataArr as $currentKey => $item) {
 			/** @var ISource $currentSource */
 			$currentSource = clone $source;
 			if (isset($item[$this->getPrimaryKey()])) {
 				$innerItems = $currentSource
-					->where($key, $item[$this->getPrimaryKey()], Mesour\ArrayManage\Searcher\Condition::EQUAL)
+					->where(
+						$columnStructure->getReferencedColumn(),
+						$item[$this->getPrimaryKey()],
+						Mesour\ArrayManage\Searcher\Condition::EQUAL
+					)
 					->fetchAll();
 
-				$this->dataArr[$currentKey][$columnAlias] = $innerItems;
+				$this->addPatternToRows($columnStructure, $innerItems);
+
+				$this->dataArr[$currentKey][$columnStructure->getName()] = $innerItems;
 			} elseif ($left) {
-				$this->dataArr[$currentKey][$columnAlias] = [];
+				$this->dataArr[$currentKey][$columnStructure->getName()] = [];
 			} else {
-				throw new Exception('Column ' . $key . ' does not exist in data array.');
+				throw new Exception('Column ' . $columnStructure->getReferencedColumn() . ' does not exist in data array.');
 			}
 			unset($currentSource);
 		}
@@ -201,7 +217,7 @@ class ArraySource extends BaseSource
 		return $this;
 	}
 
-	public function attachManyTable(Columns\ManyToManyColumnStructure $columnStructure, $left = false)
+	public function attachManyToMany(Columns\ManyToManyColumnStructure $columnStructure, $left = false)
 	{
 		$source = $this->getReferencedSource($columnStructure->getReferencedTable());
 		foreach ($this->dataArr as $currentKey => $item) {
@@ -222,7 +238,10 @@ class ArraySource extends BaseSource
 					);
 				}
 
-				$this->dataArr[$currentKey][$columnStructure->getName()] = $itemSource->fetchAll();
+				$innerItems = $itemSource->fetchAll();
+				$this->addPatternToRows($columnStructure, $innerItems);
+
+				$this->dataArr[$currentKey][$columnStructure->getName()] = $innerItems;
 			} elseif ($left) {
 				$this->dataArr[$currentKey][$columnStructure->getName()] = [];
 			} else {
@@ -265,7 +284,7 @@ class ArraySource extends BaseSource
 						if (!array_key_exists($column->getName(), $item)) {
 							throw new Exception('Column ' . $column->getName() . ' does not exists in source array.');
 						}
-						$this->dataArr[$key][self::_DATE_MARK . $column->getName()] = $this->fixDate($item[$column->getName()]);
+						$this->dataArr[$key][self::DATE_MARK . $column->getName()] = $this->fixDate($item[$column->getName()]);
 					}
 				}
 			}
@@ -279,8 +298,36 @@ class ArraySource extends BaseSource
 	{
 		foreach ($this->getDataStructure()->getColumns() as $column) {
 			if ($column->getType() === Columns\IColumnStructure::DATE) {
-				unset($out[self::_DATE_MARK . $column->getName()]);
+				unset($out[self::DATE_MARK . $column->getName()]);
 			}
+		}
+	}
+
+	protected function attachToOneRelation(Columns\BaseTableColumnStructure $columnStructure, $left = false)
+	{
+		$source = $this->getReferencedSource($columnStructure->getTableStructure()->getName());
+		foreach ($this->dataArr as $currentKey => $item) {
+			/** @var ISource $currentSource */
+			$currentSource = clone $source;
+			if (isset($item[$this->getPrimaryKey()])) {
+				$innerItem = $currentSource
+					->where(
+						$columnStructure->getTableStructure()->getPrimaryKey(),
+						$item[$columnStructure->getReferencedColumn()],
+						Mesour\ArrayManage\Searcher\Condition::EQUAL
+					)
+					->fetch();
+
+				$innerItems = [$innerItem];
+				$this->addPatternToRows($columnStructure, $innerItems);
+
+				$this->dataArr[$currentKey][$columnStructure->getName()] = reset($innerItems);
+			} elseif ($left) {
+				$this->dataArr[$currentKey][$columnStructure->getName()] = null;
+			} else {
+				throw new Exception('Column ' . $columnStructure->getReferencedColumn() . ' does not exist in data array.');
+			}
+			unset($currentSource);
 		}
 	}
 

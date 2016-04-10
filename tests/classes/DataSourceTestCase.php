@@ -1,6 +1,7 @@
 <?php
 namespace Mesour\Sources\Tests;
 
+use Mesour\Sources\ArrayHash;
 use Mesour\Sources\ISource;
 use Mesour\Sources\Structures\Columns\IColumnStructure;
 use Tester\Assert;
@@ -12,9 +13,7 @@ abstract class DataSourceTestCase extends TestCase
 	const CHANGED_PRIMARY_KEY = 'user_id';
 	const OWN_PRIMARY_KEY = 'id';
 	const FULL_USER_COUNT = 20;
-	const COLUMN_COUNT = 13;
-	const FULL_COLUMN_COUNT = 18;
-	const COLUMN_RELATION_COUNT = 13;
+	const COLUMN_COUNT = 18;
 	const FIRST_GROUP_NAME = 'Group 1';
 	const ACTIVE_COUNT = 10;
 	const INACTIVE_STATUS = 0;
@@ -101,6 +100,7 @@ abstract class DataSourceTestCase extends TestCase
 		$expectedGroupColumns = $this->getGroupExpectedColumns();
 		$expectedAddressColumns = $this->getAddressExpectedColumns();
 		$expectedCompanyColumns = $this->getCompanyExpectedColumns();
+		$userWalletColumns = $this->getWalletExpectedColumns();
 		$userCompaniesColumns = $this->getUserCompaniesExpectedColumns();
 
 		foreach ($tableNames as $currentTableName) {
@@ -113,7 +113,9 @@ abstract class DataSourceTestCase extends TestCase
 				$expected = $expectedAddressColumns;
 			} elseif ($tableStructure->getName() === $tableNames[2]) {
 				$expected = $expectedCompanyColumns;
-			} elseif (isset($tableNames[3]) && $tableStructure->getName() === $tableNames[3]) {
+			} elseif ($tableStructure->getName() === $tableNames[3]) {
+				$expected = $userWalletColumns;
+			} elseif (isset($tableNames[4]) && $tableStructure->getName() === $tableNames[4]) {
 				$expected = $userCompaniesColumns;
 			}
 
@@ -207,6 +209,25 @@ abstract class DataSourceTestCase extends TestCase
 		];
 	}
 
+	protected function getWalletExpectedColumns()
+	{
+		return [
+			'id' => [
+				'type' => IColumnStructure::NUMBER,
+			],
+			'user_id' => [
+				'type' => IColumnStructure::NUMBER,
+			],
+			'amount' => [
+				'type' => IColumnStructure::NUMBER,
+			],
+			'currency' => [
+				'type' => IColumnStructure::ENUM,
+				'values' => ['CZK', 'EUR'],
+			],
+		];
+	}
+
 	protected function getUserCompaniesExpectedColumns()
 	{
 		return [
@@ -235,6 +256,61 @@ abstract class DataSourceTestCase extends TestCase
 				'type' => IColumnStructure::BOOL,
 			],
 		];
+	}
+
+	protected function getFirstExpectedCompany()
+	{
+		return ArrayHash::from(
+			[
+				'id' => 2,
+				'name' => 'Google',
+				'reg_num' => '789123',
+				'verified' => 1,
+				'_pattern' => 'Google',
+			]
+		);
+	}
+
+	protected function getFirstExpectedAddress()
+	{
+		return ArrayHash::from(
+			[
+				'id' => 10,
+				'user_id' => 1,
+				'street' => 'Test 1',
+				'city' => 'Hehehov',
+				'zip' => '12345',
+				'country' => 'CZ',
+				'_pattern' => 'Test 1, 12345 Hehehov, CZ',
+			]
+		);
+	}
+
+	protected function getFirstExpectedGroup()
+	{
+		return ArrayHash::from(
+			[
+				'id' => 1,
+				'name' => 'Group 1',
+				'type' => 'first',
+				'date' => '2016-01-01 00:00:00',
+				'members' => 7,
+				'_pattern' => 'Group 1 - first',
+			]
+		);
+	}
+
+	protected function getFirstExpectedWallet()
+	{
+		return ArrayHash::from(
+			[
+				'id' => 1,
+				'user_id' => 1,
+				'amount' => 153.85,
+				'currency' => 'EUR',
+				'_pattern' => '153.85',
+			]
+		);
 	}
 
 	protected function matchPrimaryKey(ISource $source, $current = self::OWN_PRIMARY_KEY)

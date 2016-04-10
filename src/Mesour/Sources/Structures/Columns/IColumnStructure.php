@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the Mesour Editable (http://components.mesour.com/component/editable)
+ * This file is part of the Mesour Sources (http://components.mesour.com/component/sources)
  *
  * Copyright (c) 2016 Matouš Němec (http://mesour.com)
  *
@@ -23,10 +23,17 @@ interface IColumnStructure
 	const ENUM = 'enum';
 	const BOOL = 'bool';
 	const ONE_TO_ONE = 'one_to_one';
+	const MANY_TO_ONE = 'many_to_one';
 	const ONE_TO_MANY = 'one_to_many';
 	const MANY_TO_MANY = 'many_to_many';
 
 	public function getName();
+
+	/**
+	 * @param string $name
+	 * @internal
+	 */
+	public function setName($name);
 
 	public function getType();
 

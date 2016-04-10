@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the Mesour Editable (http://components.mesour.com/component/editable)
+ * This file is part of the Mesour Sources (http://components.mesour.com/component/sources)
  *
  * Copyright (c) 2016 Matouš Němec (http://mesour.com)
  *
@@ -44,36 +44,23 @@ class DataStructure extends TableStructure implements IDataStructure
 	/**
 	 * @param string $name
 	 * @param string $table
-	 * @param Columns\IColumnStructure|string $referencedColumn
-	 * @param string $primaryKey
+	 * @param string $referencedColumn
+	 * @param null $pattern
 	 * @return Columns\OneToOneColumnStructure
 	 */
-	public function addOneToOne($name, $table, $referencedColumn, $primaryKey = 'id')
+	public function addOneToOne($name, $table, $referencedColumn, $pattern = null)
 	{
-		if ($referencedColumn instanceof Columns\IColumnStructure) {
-			$columnName = $referencedColumn->getName();
-		} else {
-			$columnName = $referencedColumn;
-		}
+		$column = $this->addJoinedColumn(
+			Columns\IColumnStructure::ONE_TO_ONE,
+			$name,
+			$table,
+			$referencedColumn,
+			$pattern
+		);
 
-		$tableStructure = $this->getOrCreateTableStructure($table, $primaryKey);
-		if (!$tableStructure->hasColumn($columnName)) {
-			$tableStructure->addColumn(
-				$referencedColumn instanceof Columns\IColumnStructure
-					? $referencedColumn
-					: new Columns\TextColumnStructure($referencedColumn)
-			);
+		if (method_exists($this->getSource(), 'attachOneToOne')) {
+			$this->getSource()->attachOneToOne($column, true);
 		}
-
-		/** @var Columns\OneToOneColumnStructure $column */
-		if ($this->hasColumn($name)) {
-			$column = $this->getColumn($name);
-		} else {
-			$column = $this->addColumn($this->createColumnStructure(Columns\IColumnStructure::ONE_TO_ONE, $name));
-		}
-
-		$column->setReferencedColumn($columnName);
-		$column->setTableStructure($tableStructure);
 
 		return $column;
 	}
@@ -81,27 +68,46 @@ class DataStructure extends TableStructure implements IDataStructure
 	/**
 	 * @param string $name
 	 * @param string $table
-	 * @param null|string $referencedColumn
+	 * @param string $referencedColumn
+	 * @param null $pattern
+	 * @return Columns\ManyToOneColumnStructure
+	 */
+	public function addManyToOne($name, $table, $referencedColumn, $pattern = null)
+	{
+		$column = $this->addJoinedColumn(
+			Columns\IColumnStructure::MANY_TO_ONE,
+			$name,
+			$table,
+			$referencedColumn,
+			$pattern
+		);
+
+		if (method_exists($this->getSource(), 'attachManyToOne')) {
+			$this->getSource()->attachManyToOne($column, true);
+		}
+
+		return $column;
+	}
+
+	/**
+	 * @param string $name
+	 * @param string $table
+	 * @param string $referencedColumn
 	 * @param null|string $pattern
 	 * @return Columns\OneToManyColumnStructure
 	 */
 	public function addOneToMany($name, $table, $referencedColumn, $pattern = null)
 	{
-		$tableStructure = $this->getTableStructure($table);
+		$column = $this->addJoinedColumn(
+			Columns\IColumnStructure::ONE_TO_MANY,
+			$name,
+			$table,
+			$referencedColumn,
+			$pattern
+		);
 
-		/** @var Columns\OneToManyColumnStructure $column */
-		if ($this->hasColumn($name)) {
-			$column = $this->getColumn($name);
-		} else {
-			$column = $this->addColumn($this->createColumnStructure(Columns\IColumnStructure::ONE_TO_MANY, $name));
-		}
-
-		$column->setPattern($pattern);
-		$column->setReferencedColumn($referencedColumn);
-		$column->setTableStructure($tableStructure);
-
-		if (method_exists($this->getSource(), 'attachTable')) {
-			$this->getSource()->attachTable($table, $referencedColumn, $name, true);
+		if (method_exists($this->getSource(), 'attachOneToMany')) {
+			$this->getSource()->attachOneToMany($column, true);
 		}
 
 		return $column;
@@ -118,23 +124,19 @@ class DataStructure extends TableStructure implements IDataStructure
 	 */
 	public function addManyToMany($name, $table, $selfColumn, $relationalTable, $relationalColumn, $pattern = null)
 	{
-		$tableStructure = $this->getTableStructure($table);
-
 		/** @var Columns\ManyToManyColumnStructure $column */
-		if ($this->hasColumn($name)) {
-			$column = $this->getColumn($name);
-		} else {
-			$column = $this->addColumn($this->createColumnStructure(Columns\IColumnStructure::MANY_TO_MANY, $name));
-		}
-
-		$column->setPattern($pattern);
-		$column->setReferencedTable($relationalTable);
-		$column->setReferencedColumn($relationalColumn);
+		$column = $this->addJoinedColumn(
+			Columns\IColumnStructure::MANY_TO_MANY,
+			$name,
+			$table,
+			$relationalColumn,
+			$pattern
+		);
 		$column->setSelfColumn($selfColumn);
-		$column->setTableStructure($tableStructure);
+		$column->setReferencedTable($relationalTable);
 
-		if (method_exists($this->getSource(), 'attachManyTable')) {
-			$this->getSource()->attachManyTable($column, true);
+		if (method_exists($this->getSource(), 'attachManyToMany')) {
+			$this->getSource()->attachManyToMany($column, true);
 		}
 
 		return $column;
@@ -157,7 +159,7 @@ class DataStructure extends TableStructure implements IDataStructure
 	{
 		if (!isset($this->tableStructures[$table])) {
 			throw new Mesour\Sources\InvalidArgumentException(
-				sprintf('Table structure %s not exist.', $table)
+				sprintf('Table structure %s not exist. Try use method addTableToStructure on source.', $table)
 			);
 		}
 		return $this->tableStructures[$table];
@@ -173,6 +175,24 @@ class DataStructure extends TableStructure implements IDataStructure
 			$this->tableStructures[$table] = $tableStructure;
 		}
 		return $this->getTableStructure($table);
+	}
+
+	protected function addJoinedColumn($columnType, $name, $table, $referencedColumn, $pattern = null)
+	{
+		$tableStructure = $this->getTableStructure($table);
+
+		/** @var Columns\BaseTableColumnStructure $column */
+		if ($this->hasColumn($name)) {
+			$column = $this->getColumn($name);
+		} else {
+			$column = $this->addColumn($this->createColumnStructure($columnType, $name));
+		}
+
+		$column->setPattern($pattern);
+		$column->setReferencedColumn($referencedColumn);
+		$column->setTableStructure($tableStructure);
+
+		return $column;
 	}
 
 }

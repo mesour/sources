@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the Mesour Editable (http://components.mesour.com/component/editable)
+ * This file is part of the Mesour Sources (http://components.mesour.com/component/sources)
  *
  * Copyright (c) 2016 Matouš Němec (http://mesour.com)
  *
@@ -15,6 +15,7 @@ use Mesour\Sources\Structures\Columns\DateColumnStructure;
 use Mesour\Sources\Structures\Columns\EnumColumnStructure;
 use Mesour\Sources\Structures\Columns\IColumnStructure;
 use Mesour\Sources\Structures\Columns\ManyToManyColumnStructure;
+use Mesour\Sources\Structures\Columns\ManyToOneColumnStructure;
 use Mesour\Sources\Structures\Columns\NumberColumnStructure;
 use Mesour\Sources\Structures\Columns\OneToManyColumnStructure;
 use Mesour\Sources\Structures\Columns\OneToOneColumnStructure;
@@ -37,6 +38,7 @@ class TableStructure implements ITableStructure
 		IColumnStructure::ENUM => EnumColumnStructure::class,
 		IColumnStructure::NUMBER => NumberColumnStructure::class,
 		IColumnStructure::BOOL => BoolColumnStructure::class,
+		IColumnStructure::MANY_TO_ONE => ManyToOneColumnStructure::class,
 		IColumnStructure::MANY_TO_MANY => ManyToManyColumnStructure::class,
 		IColumnStructure::ONE_TO_ONE => OneToOneColumnStructure::class,
 		IColumnStructure::ONE_TO_MANY => OneToManyColumnStructure::class,
@@ -125,6 +127,18 @@ class TableStructure implements ITableStructure
 		return $this->columns[$name];
 	}
 
+	public function renameColumn($name, $newName)
+	{
+		$column = $this->getColumn($name);
+
+		$column->setName($newName);
+
+		$this->columns[$newName] = $this->columns[$name];
+		unset($this->columns[$name]);
+
+		return $column;
+	}
+
 	public function toArray()
 	{
 		return [
@@ -150,9 +164,10 @@ class TableStructure implements ITableStructure
 		return isset($this->columns[$name]);
 	}
 
-	protected function removeColumn($name)
+	public function removeColumn($name)
 	{
 		unset($this->columns[$name]);
+		return $this;
 	}
 
 	protected function createColumn($class, $name)
