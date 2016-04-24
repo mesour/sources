@@ -17,7 +17,6 @@ use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
-use Mesour\Sources\Structures\Columns\BaseTableColumnStructure;
 use Mesour\Sources\Structures\Columns\IColumnStructure;
 use Mesour\Sources\Structures\Columns\ManyToManyColumnStructure;
 use Mesour\Sources\Structures\Columns\ManyToOneColumnStructure;
