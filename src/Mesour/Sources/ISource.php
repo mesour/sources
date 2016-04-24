@@ -115,41 +115,4 @@ interface ISource
 	 */
 	public function getReferencedSource($table);
 
-	/**
-	 * @param string $primaryKey
-	 * @deprecated
-	 */
-	public function setPrimaryKey($primaryKey);
-
-	/**
-	 * @param string $columnAlias
-	 * @param string $table
-	 * @param string $referencedColumn
-	 * @param string $primaryKey
-	 * @deprecated
-	 */
-	public function setReference($columnAlias, $table, $referencedColumn, $primaryKey = 'id');
-
-	/**
-	 * @deprecated
-	 */
-	public function getReferenceSettings();
-
-	/**
-	 * @param string $table
-	 * @deprecated
-	 */
-	public function hasReference($table);
-
-	/**
-	 * @deprecated
-	 */
-	public function getReferencedTables();
-
-	/**
-	 * @param string $columnAlias
-	 * @deprecated
-	 */
-	public function getReference($columnAlias);
-
 }
