@@ -138,7 +138,40 @@ abstract class BaseSource implements ISource
 
 	protected function makeArrayHash(array $val)
 	{
-		return ArrayHash::from($val);
+		$hash = $val;
+
+		$out = [];
+		foreach ($hash as $key => $value) {
+			if (is_numeric($key)) {
+				$subOut = [];
+				foreach ($value as $subKey => $subValue) {
+					$subOut[$subKey] = $this->makeArrayHashNonRecursive($subValue);
+				}
+				$out[$key] = ArrayHash::from($subOut);
+			} else {
+				$value = $this->makeArrayHashNonRecursive($value);
+				$out[$key] = $value;
+			}
+		}
+
+		return ArrayHash::from($out);
+	}
+
+	private function makeArrayHashNonRecursive($value)
+	{
+		if (is_array($value) || $value instanceof ArrayHash) {
+			$values = [];
+			$firstValue = reset($value);
+			if (is_array($firstValue) || $firstValue instanceof ArrayHash) {
+				foreach ($value as $subValue) {
+					$values[] = PatternedArrayHash::from($subValue, false);
+				}
+				return $values;
+			} else {
+				return PatternedArrayHash::from($value, false);
+			}
+		}
+		return $value;
 	}
 
 	protected function initializeDataStructure($tableName, $primaryKey)

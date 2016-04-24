@@ -278,8 +278,7 @@ class NetteDbTableSource extends BaseSource
 							if ($isManyToMany) {
 								unset($forSave[$column->getReferencedColumn()]);
 							}
-
-							$newValues[$column->getName()][] = $this->makeArrayHash($forSave);
+							$newValues[$column->getName()][] = $forSave;
 						}
 					}
 					$this->addPatternToRows($column, $newValues[$column->getName()]);
@@ -287,10 +286,11 @@ class NetteDbTableSource extends BaseSource
 					$newValues[$column->getName()] = [];
 					foreach ($joined[$column->getName()] as $currentItem) {
 						if (
-							$item[$column->getTableStructure()->getPrimaryKey()]
-							=== $currentItem[$column->getReferencedColumn()]
+							$currentItem[$column->getTableStructure()->getPrimaryKey()]
+							=== $item[$column->getReferencedColumn()]
 						) {
 							$currentItems = [$currentItem];
+
 							$this->addPatternToRows($column, $currentItems);
 							$newValues[$column->getName()] = reset($currentItems);
 							break;
@@ -345,7 +345,7 @@ class NetteDbTableSource extends BaseSource
 			$targetReference = $structure->getBelongsToReference($table);
 			$hasOneToOne = array_search($tableName, $targetReference);
 			if ($hasOneToOne) {
-				$field = $dataStructure->addOneToOne($table, $table, $hasOneToOne);
+				$field = $dataStructure->addOneToOne($table, $table, $key);
 			} else {
 				$field = $dataStructure->addManyToOne($table, $table, $key);
 			}
