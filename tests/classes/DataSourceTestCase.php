@@ -3,6 +3,7 @@ namespace Mesour\Sources\Tests;
 
 use Mesour\Sources\ArrayHash;
 use Mesour\Sources\ISource;
+use Mesour\Sources\PatternedArrayHash;
 use Mesour\Sources\Structures\Columns\IColumnStructure;
 use Tester\Assert;
 use Tester\TestCase;
@@ -260,7 +261,7 @@ abstract class DataSourceTestCase extends TestCase
 
 	protected function getFirstExpectedCompany()
 	{
-		return ArrayHash::from(
+		return PatternedArrayHash::from(
 			[
 				'id' => 2,
 				'name' => 'Google',
@@ -273,7 +274,7 @@ abstract class DataSourceTestCase extends TestCase
 
 	protected function getFirstExpectedAddress()
 	{
-		return ArrayHash::from(
+		return PatternedArrayHash::from(
 			[
 				'id' => 10,
 				'user_id' => 1,
@@ -288,7 +289,7 @@ abstract class DataSourceTestCase extends TestCase
 
 	protected function getFirstExpectedGroup()
 	{
-		return ArrayHash::from(
+		return PatternedArrayHash::from(
 			[
 				'id' => 1,
 				'name' => 'Group 1',
@@ -302,7 +303,7 @@ abstract class DataSourceTestCase extends TestCase
 
 	protected function getFirstExpectedWallet()
 	{
-		return ArrayHash::from(
+		return PatternedArrayHash::from(
 			[
 				'id' => 1,
 				'user_id' => 1,
