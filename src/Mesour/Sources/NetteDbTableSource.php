@@ -133,7 +133,7 @@ class NetteDbTableSource extends BaseSource
 
 	public function orderBy($row, $sorting = 'ASC')
 	{
-		return $this->netteTable->order($row . ' ' . $sorting);
+		return $this->netteTable->order($this->prefixColumn($row) . ' ' . $sorting);
 	}
 
 	/**
