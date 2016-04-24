@@ -190,9 +190,10 @@ abstract class BaseArraySourceTest extends DataSourceTestCase
 		$this->assertDataStructure($source, $tableNames);
 	}
 
-	protected function createArraySourceWithDataStructure()
+	protected function createArraySourceWithDataStructure($class = ArraySource::class)
 	{
-		$source = new ArraySource('users', self::OWN_PRIMARY_KEY, self::$user, $this->relations);
+		/** @var ArraySource $source */
+		$source = new $class('users', self::OWN_PRIMARY_KEY, self::$user, $this->relations);
 
 		$dataStructure = $source->getDataStructure();
 		$dataStructure->addNumber('id');
