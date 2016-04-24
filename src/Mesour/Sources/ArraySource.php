@@ -209,7 +209,9 @@ class ArraySource extends BaseSource
 			} elseif ($left) {
 				$this->dataArr[$currentKey][$columnStructure->getName()] = [];
 			} else {
-				throw new Exception('Column ' . $columnStructure->getReferencedColumn() . ' does not exist in data array.');
+				throw new Exception(
+					'Column ' . $columnStructure->getReferencedColumn() . ' does not exist in data array.'
+				);
 			}
 			unset($currentSource);
 		}
@@ -225,7 +227,11 @@ class ArraySource extends BaseSource
 			$currentSource = clone $source;
 			if (isset($item[$this->getPrimaryKey()])) {
 				$innerItems = $currentSource
-					->where($columnStructure->getReferencedColumn(), $item[$this->getPrimaryKey()], Mesour\ArrayManage\Searcher\Condition::EQUAL)
+					->where(
+						$columnStructure->getReferencedColumn(),
+						$item[$this->getPrimaryKey()],
+						Mesour\ArrayManage\Searcher\Condition::EQUAL
+					)
 					->fetchAll();
 
 				$itemSource = $this->getReferencedSource($columnStructure->getTableStructure()->getName());
@@ -284,7 +290,9 @@ class ArraySource extends BaseSource
 						if (!array_key_exists($column->getName(), $item)) {
 							throw new Exception('Column ' . $column->getName() . ' does not exists in source array.');
 						}
-						$this->dataArr[$key][self::DATE_MARK . $column->getName()] = $this->fixDate($item[$column->getName()]);
+						$this->dataArr[$key][self::DATE_MARK . $column->getName()] = $this->fixDate(
+							$item[$column->getName()]
+						);
 					}
 				}
 			}
@@ -310,6 +318,15 @@ class ArraySource extends BaseSource
 			/** @var ISource $currentSource */
 			$currentSource = clone $source;
 			if (isset($item[$this->getPrimaryKey()])) {
+				if (!array_key_exists($columnStructure->getReferencedColumn(), $item)) {
+					throw new InvalidStateException(
+						sprintf(
+							'Referenced column "%s" does not exist on "%s" table.',
+							$columnStructure->getReferencedColumn(),
+							$this->getTableName()
+						)
+					);
+				}
 				$innerItem = $currentSource
 					->where(
 						$columnStructure->getTableStructure()->getPrimaryKey(),
@@ -325,7 +342,9 @@ class ArraySource extends BaseSource
 			} elseif ($left) {
 				$this->dataArr[$currentKey][$columnStructure->getName()] = null;
 			} else {
-				throw new Exception('Column ' . $columnStructure->getReferencedColumn() . ' does not exist in data array.');
+				throw new Exception(
+					'Column ' . $columnStructure->getReferencedColumn() . ' does not exist in data array.'
+				);
 			}
 			unset($currentSource);
 		}

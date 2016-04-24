@@ -47,8 +47,7 @@ class NetteDbTableSource extends BaseSource
 		Nette\Database\Table\Selection $selection,
 		Nette\Database\Context $context,
 		$columnMapping = []
-	)
-	{
+	) {
 		$this->context = $context;
 		$this->netteTable = $selection;
 		$this->columnMapping = $columnMapping;
@@ -310,13 +309,22 @@ class NetteDbTableSource extends BaseSource
 							break;
 						}
 					}
-
 				}
 			}
 			$result[$key] = $this->makeArrayHash(array_merge($item, $newValues));
 		}
 
 		return $result;
+	}
+
+	protected function findColumn(array $columns, $name)
+	{
+		foreach ($columns as $column) {
+			if ($column['name'] === $name) {
+				return $column;
+			}
+		}
+		return false;
 	}
 
 	protected function initializeDataStructure($tableName, $primaryKey)
@@ -337,10 +345,12 @@ class NetteDbTableSource extends BaseSource
 			$targetReference = $structure->getBelongsToReference($table);
 			$hasOneToOne = array_search($tableName, $targetReference);
 			if ($hasOneToOne) {
-				$dataStructure->addOneToOne($table, $table, $hasOneToOne);
+				$field = $dataStructure->addOneToOne($table, $table, $hasOneToOne);
 			} else {
-				$dataStructure->addManyToOne($table, $table, $key);
+				$field = $dataStructure->addManyToOne($table, $table, $key);
 			}
+			$column = $this->findColumn($columns, $key);
+			$field->setNullable($column['nullable']);
 		}
 
 		foreach ($structure->getHasManyReference($tableName) as $table => $keys) {
