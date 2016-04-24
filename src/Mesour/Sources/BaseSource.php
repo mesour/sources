@@ -145,19 +145,19 @@ abstract class BaseSource implements ISource
 			if (is_numeric($key)) {
 				$subOut = [];
 				foreach ($value as $subKey => $subValue) {
-					$subOut[$subKey] = $this->makeArrayHashNonRecursive($subValue);
+					$subOut[$subKey] = $this->makePaterrnedArrayHash($subValue);
 				}
-				$out[$key] = ArrayHash::from($subOut);
+				$out[$key] = count($subOut) ? ArrayHash::from($subOut) : [];
 			} else {
-				$value = $this->makeArrayHashNonRecursive($value);
+				$value = $this->makePaterrnedArrayHash($value);
 				$out[$key] = $value;
 			}
 		}
 
-		return ArrayHash::from($out);
+		return count($out) ? ArrayHash::from($out, false) : [];
 	}
 
-	private function makeArrayHashNonRecursive($value)
+	private function makePaterrnedArrayHash($value)
 	{
 		if (is_array($value) || $value instanceof ArrayHash) {
 			$values = [];
@@ -168,7 +168,7 @@ abstract class BaseSource implements ISource
 				}
 				return $values;
 			} else {
-				return PatternedArrayHash::from($value, false);
+				return count($value) ? PatternedArrayHash::from($value, false) : [];
 			}
 		}
 		return $value;
