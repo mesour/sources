@@ -179,7 +179,7 @@ abstract class BaseNetteDbSourceTest extends DataSourceTestCase
 
 		Assert::count(3, $firstItem['companies']);
 		Assert::equal($this->getFirstExpectedCompany(), $firstItem['companies'][0]);
-		Assert::equal($this->getFirstExpectedAddress(), reset($firstItem['addresses']));
+		Assert::equal($this->getFirstExpectedAddress(), $firstItem['addresses'][0]);
 		Assert::equal($this->getFirstExpectedGroup(), $firstItem['group']);
 		Assert::equal($this->getFirstExpectedWallet(), $firstItem['wallet']);
 	}

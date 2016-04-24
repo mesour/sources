@@ -206,8 +206,8 @@ abstract class BaseDoctrineSourceTest extends DataSourceTestCase
 		Assert::count(self::COLUMN_COUNT, array_keys((array) $firstItem));
 
 		Assert::count(3, $firstItem['companies']);
-		Assert::equal($this->getFirstExpectedCompany(), reset($firstItem['companies']));
-		Assert::equal($this->getFirstExpectedAddress(), reset($firstItem['addresses']));
+		Assert::equal($this->getFirstExpectedCompany(), $firstItem['companies'][0]);
+		Assert::equal($this->getFirstExpectedAddress(), $firstItem['addresses'][0]);
 		Assert::equal($this->getFirstExpectedGroup(), $firstItem['group']);
 		Assert::equal($this->getFirstExpectedWallet(), $firstItem['wallet']);
 	}
