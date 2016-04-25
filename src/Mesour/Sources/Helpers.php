@@ -31,10 +31,10 @@ class Helpers
 					$matches = array_unique($matches);
 					$match = reset($matches);
 					$key = substr($match, 1, strlen($match) - 2);
-					if (is_object($data)) {
+					if (is_object($data) && !$data instanceof ArrayHash) {
 						$currentValue = isset($data->{$key}) ? $data->{$key} : '__UNDEFINED_KEY-' . $key . '__';
 					} else {
-						$currentValue = isset($data[$key]) ? $data[$key] : '__UNDEFINED_KEY-' . $key . '__';
+						$currentValue = array_key_exists($key, $data) ? $data[$key] : '__UNDEFINED_KEY-' . $key . '__';
 					}
 
 					return $currentValue;
