@@ -234,7 +234,7 @@ class ArraySource extends BaseSource
 					)
 					->fetchAll();
 
-				if(count($innerItems) === 0) {
+				if (count($innerItems) === 0) {
 					$this->dataArr[$currentKey][$columnStructure->getName()] = [];
 					unset($currentSource);
 					continue;
