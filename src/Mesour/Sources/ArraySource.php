@@ -234,7 +234,13 @@ class ArraySource extends BaseSource
 					)
 					->fetchAll();
 
-				$itemSource = $this->getReferencedSource($columnStructure->getTableStructure()->getName());
+				if (count($innerItems) === 0) {
+					$this->dataArr[$currentKey][$columnStructure->getName()] = [];
+					unset($currentSource);
+					continue;
+				}
+
+				$itemSource = clone $this->getReferencedSource($columnStructure->getTableStructure()->getName());
 				foreach ($innerItems as $current) {
 					$itemSource->where(
 						$columnStructure->getTableStructure()->getPrimaryKey(),
