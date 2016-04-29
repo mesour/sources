@@ -367,15 +367,17 @@ class DoctrineSource extends BaseSource
 						);
 					}
 					$joinTable = $association['joinTable'];
-					$joinColumn = reset($joinTable['joinColumns']);
-					$inverseJoinColumn = reset($joinTable['inverseJoinColumns']);
-					$dataStructure->addManyToMany(
-						$associationName,
-						$targetClass,
-						$inverseJoinColumn['name'],
-						$joinTable['name'],
-						$joinColumn['name']
-					);
+					if (isset($joinTable['joinColumns']) && $joinTable['joinColumns']) {
+						$joinColumn = reset($joinTable['joinColumns']);
+						$inverseJoinColumn = reset($joinTable['inverseJoinColumns']);
+						$dataStructure->addManyToMany(
+							$associationName,
+							$targetClass,
+							$inverseJoinColumn['name'],
+							$joinTable['name'],
+							$joinColumn['name']
+						);
+					}
 				}
 			}
 		}
