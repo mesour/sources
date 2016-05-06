@@ -495,9 +495,13 @@ class DoctrineSource extends BaseSource
 				$current = $item;
 				foreach ($this->getDataStructure()->getColumns() as $column) {
 					if ($column instanceof OneToOneColumnStructure || $column instanceof ManyToOneColumnStructure) {
-						$items = [$current[$column->getName()]];
-						$this->addPatternToRows($column, $items);
-						$current[$column->getName()] = reset($items);
+						if (isset($current[$column->getName()])) {
+							$items = [$current[$column->getName()]];
+							$this->addPatternToRows($column, $items);
+							$current[$column->getName()] = reset($items);
+						} else {
+							$current[$column->getName()] = [];
+						}
 					} elseif (
 						$column instanceof ManyToManyColumnStructure
 						|| $column instanceof OneToManyColumnStructure
