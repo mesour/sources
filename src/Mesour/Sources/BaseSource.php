@@ -183,13 +183,19 @@ abstract class BaseSource implements ISource
 
 	protected function addPatternToRows(BaseTableColumnStructure $columnStructure, &$items)
 	{
-		foreach ($items as $key => $item) {
-			if ($columnStructure->getPattern()) {
-				$item['_pattern'] = Helpers::parseValue($columnStructure->getPattern(), $item);
-			} else {
-				$item['_pattern'] = null;
+		if (is_array($items) || $items instanceof ArrayHash) {
+			foreach ($items as $key => $item) {
+				if (is_array($item) || $item instanceof ArrayHash) {
+					if ($columnStructure->getPattern()) {
+						$item['_pattern'] = Helpers::parseValue($columnStructure->getPattern(), $item);
+					} else {
+						$item['_pattern'] = null;
+					}
+				}
+				$items[$key] = $item;
 			}
-			$items[$key] = $item;
+		} else {
+			$items = [];
 		}
 	}
 
