@@ -410,7 +410,7 @@ class NetteDbTableSource extends BaseSource
 				$out[$column['name']] = [
 					'type' => IColumnStructure::ENUM,
 				];
-				$enum = $column['vendor']['Type'];
+				$enum = isset($column['vendor']['Type']) ? $column['vendor']['Type'] : $column['vendor']['type'];
 				$options = str_getcsv(str_replace('enum(', '', substr($enum, 0, strlen($enum) - 1)), ',', "'");
 
 				$out[$column['name']]['values'] = [];
