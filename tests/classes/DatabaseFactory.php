@@ -4,8 +4,10 @@ namespace Mesour\Sources\Tests;
 
 use Nette;
 
-class DatabaseFactory extends Nette\Object
+class DatabaseFactory
 {
+
+	use Nette\SmartObject;
 
 	private $host;
 
